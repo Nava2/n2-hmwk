@@ -1,3 +1,4 @@
+
 *.o
 *.out
 *.a
@@ -5,5 +6,11 @@
 *.dll
 *.so
 *.cmake
+
+# Misc:
+*.user
+*.swp
+*.autosave
+.DS_Store
 
 **build/
