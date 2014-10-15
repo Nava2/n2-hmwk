@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string>
+#include <sstream>
 #include <opencv2/opencv.hpp>
 
 /*!
@@ -12,29 +13,29 @@
  * \author Kevin Brightwell
  */
 
-using std::string;
 using std::cout;
 using std::endl;
-
-/*!
- * \brief DEFAULT_OUTPUT Default path for output image
- */
-const static string DEFAULT_OUTPUT = "output.png";
 
 /*!
  * \brief showImage is a convenience function for displaying an image.
  * \param title Title for the window
  * \param src Image to display
  */
-void showImage(const string &title, const cv::Mat &src) {
+void showImage(const std::string &title, const cv::Mat &src) {
     cv::namedWindow(title, CV_WINDOW_AUTOSIZE );
     cv::imshow(title, src);
 
     cv::waitKey(0);
 }
 
+/*!
+ * \brief squareImage Squares out an image, padding the right or bottom with
+ * black pixels
+ * \param inputArr Input to read
+ * \param outputArr Output image written to
+ */
 inline
-void squareImage(const cv::Mat inputArr, cv::Mat outputArr) {
+void squareImage(const cv::Mat inputArr, cv::Mat &outputArr) {
     const cv::Size srcSize = inputArr.size();
     const int sqrSize = std::max(srcSize.height, srcSize.width);
 
@@ -42,48 +43,96 @@ void squareImage(const cv::Mat inputArr, cv::Mat outputArr) {
                        0, sqrSize - srcSize.width, cv::BORDER_CONSTANT, 0);
 }
 
+struct MotionParams {
 
-using std::cout;
-using std::endl;
+    //!< parameter, specifying the image scale (<1) to build pyramids for each
+    //!< image; pyr_scale=0.5 means a classical pyramid, where each next layer
+    //!< is twice smaller than the previous one.
+    double pyr_scale;
 
-int main(int argc, char** argv )
+    //!< number of pyramid layers including the initial image; levels=1 means
+    //!< that no extra layers are created and only the original images are
+    //!< used.
+    int levels;
+
+    //!< averaging window size; larger values increase the algorithm
+    //!< robustness to image noise and give more chances for fast motion
+    //!< detection, but yield more blurred motion field.
+    int winsize;
+
+    //!< number of iterations the algorithm does at each pyramid level.
+    int iterations;
+
+    //!< size of the pixel neighborhood used to find polynomial expansion in
+    //!< each pixel; larger values mean that the image will be approximated
+    //!< with smoother surfaces, yielding more robust algorithm and more
+    //!< blurred motion field, typically poly_n =5 or 7.
+    int poly_n;
+
+    //!< standard deviation of the Gaussian that is used to smooth derivatives
+    //!< used as a basis for the polynomial expansion; for poly_n=5, you can
+    //!< set poly_sigma=1.1, for poly_n=7, a good value would be poly_sigma=1.5
+    double poly_sigma;
+
+    /*!
+     * \brief run Run &cv::calcOpticalFlowFarneback()
+     * \param first First frame, `n`
+     * \param next Next frame, `n + 1`
+     * \param flow Flow computed
+     */
+    void run(const cv::Mat &first, const cv::Mat &next, cv::Mat &flow) const {
+        cv::calcOpticalFlowFarneback(first, next, flow, this->pyr_scale,
+                                     this->levels, this->winsize,
+                                     this->iterations, this->poly_n,
+                                     this->poly_sigma,
+                                     cv::OPTFLOW_FARNEBACK_GAUSSIAN);
+    }
+
+
+};
+
+/// Write %MotionParams to an %std::ostream.
+std::ostream& operator<<(std::ostream& os, const MotionParams& obj)
 {
-    if ( argc != 3 && argc != 4 )
-    {
-        cout << "Usage: ./asn1 <Image_Path1> <Image_Path2> [<Output_Path>]" << endl;
-        return -1;
-    }
+    os << "MotionParams {" <<
+          "pyr_scale="  << obj.pyr_scale    << ", levels="      << obj.levels <<
+          ", winsize="  << obj.winsize      << ", iterations="  << obj.iterations <<
+          ", poly_n="   << obj.poly_n       << ", poly_sigma="  << obj.poly_sigma <<
+          "}";
+    return os;
+}
 
-    // check if optional param was specified, take if it's available.
-    const string OUTPUT_PATH = (argc == 4 ? argv[3] : DEFAULT_OUTPUT);
-
-    // Load images for processing
-    const cv::Mat srcImage1 = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
-    const cv::Mat srcImage2 = cv::imread( argv[2], CV_LOAD_IMAGE_GRAYSCALE );
-
-    // verify the files were valid
-    if ( srcImage1.empty() || srcImage2.empty() )
-    {
-        printf("No image data \n");
-        return -1;
-    }
-
-    assert(srcImage1.size() == srcImage2.size());
-
+/*!
+ * \brief predictNextFrame Runs optical flow calculations, then creates a
+ * predicted frame following \c first
+ *
+ * \param first first frame, `n`
+ * \param next Next frame, `n + 1`
+ * \param params Parameters for %cv::calcOpticalFlowFarneback
+ * \return %cv::Mat with predicted frame
+ */
+const cv::Mat predictNextFrame(const cv::Mat &first, const cv::Mat &next, const MotionParams &params) {
     // square out input images to properly compute optical flow
-    cv::Mat sqrImg1, sqrImg2;
-    squareImage(srcImage1, sqrImg1);
-    squareImage(srcImage2, sqrImg2);
+    cv::Mat sqrFirst, sqrNext;
+    squareImage(first, sqrFirst);
+    squareImage(next, sqrNext);
 
-    cv::Mat flowMat = cv::Mat::zeros(sqrImg1.size(), CV_32FC2);
-    cv::calcOpticalFlowFarneback(sqrImg1, sqrImg2, flowMat,
-                                 0.5, 3, 3, 3, 5, 1.2, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
+    cv::Mat flowMat = cv::Mat::zeros(first.size(), CV_32FC2);
+
+    std::stringstream ss;
+    ss << params;
+    cout << "Params:\t" << ss.str() << endl;
+
+    params.run(sqrFirst, sqrNext, flowMat);
 
     // allocate a buffer to write flow contributions to
     cv::Mat buff = cv::Mat::zeros(flowMat.size(), CV_8U);
-    cv::Size adj(flowMat.size().width - 1, flowMat.size().height - 1);
 
+    // create a size to work with, this value is to ignore a 1-pixel border
+    // due to applying a 3x3 operation
+    const cv::Size adj(flowMat.size().width - 1, flowMat.size().height - 1);
 
+    // manually apply a 3x3 kernel, creating a image with only valid pixels
     for (size_t j = 1; j < adj.height; ++j) {
         for (size_t i = 1; i < adj.width; ++i) {
 
@@ -96,7 +145,7 @@ int main(int argc, char** argv )
                     const cv::Point2i ctrib(x + flow[0], y + flow[1]);
 
                     if (ctrib.inside(cRect)) {
-                        comb += sqrImg1.at<uchar>(x, y);
+                        comb += sqrFirst.at<uchar>(x, y);
                     }
                 }
             }
@@ -107,22 +156,53 @@ int main(int argc, char** argv )
         }
     }
 
+    // copy the buffer into an output Mat
     cv::Mat out;
-    buff(cv::Rect(0, 0, srcImage1.size().width, srcImage1.size().height)).copyTo(out);
+    buff(cv::Rect(0, 0, first.size().width, first.size().height)).copyTo(out);
 
-    cout << "Output Size: " << out.size() << endl;
-    showImage("out", out);
+    return out;
+}
 
+int main(int argc, char** argv )
+{
+    if ( argc != 3 )
+    {
+        cout << "Usage: ./asn1 <First Image> <Next Image>" << endl;
+        return -1;
+    }
+
+    // Load images for processing
+    const cv::Mat firstImg = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
+    const cv::Mat nextImg = cv::imread( argv[2], CV_LOAD_IMAGE_GRAYSCALE );
+
+    // verify the files were valid
+    if ( firstImg.empty() || nextImg.empty() )
+    {
+        printf("No image data \n");
+        return -1;
+    }
+
+    assert(firstImg.size() == nextImg.size());
+
+    MotionParams params = { 0.5,
+            3,      // levels
+            5,      // win size
+            10,     // iterations
+            5,      // poly_n
+            1.2 };  // poly_sigma
+
+    const cv::Mat out = predictNextFrame(firstImg, nextImg, params);
+
+    // compute the std deviation and average between the actual next frame and
+    // the predicted
     cv::Mat diffMat;
-    cv::absdiff(srcImage2, out, diffMat);
+    cv::absdiff(nextImg, out, diffMat);
 
     cv::Scalar mean, dev;
     cv::meanStdDev(diffMat, mean, dev, out);
 
     cout << "Mean: " << mean[0] << endl;
     cout << "Dev:  " << dev[0] << endl;
-
-    cout << "Output written to: " << OUTPUT_PATH << endl;
 
     return 0;
 }
