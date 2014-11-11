@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <math.h>
 #include <opencv2/opencv.hpp>
 
 /*!
@@ -25,7 +26,7 @@ void showImage(const std::string &title, const cv::Mat &src) {
     cv::namedWindow(title, CV_WINDOW_AUTOSIZE );
     cv::imshow(title, src);
 
-    cv::waitKey(0);
+   // cv::waitKey(0);
 }
 
 /*!
@@ -117,7 +118,7 @@ const cv::Mat predictNextFrame(const cv::Mat &first, const cv::Mat &next, const 
     squareImage(first, sqrFirst);
     squareImage(next, sqrNext);
 
-    cv::Mat flowMat = cv::Mat::zeros(first.size(), CV_32FC2);
+    cv::Mat flowMat = cv::Mat::zeros(sqrFirst.size(), CV_32FC2);
 
     std::stringstream ss;
     ss << params;
@@ -133,25 +134,29 @@ const cv::Mat predictNextFrame(const cv::Mat &first, const cv::Mat &next, const 
     const cv::Size adj(flowMat.size().width - 1, flowMat.size().height - 1);
 
     // manually apply a 3x3 kernel, creating a image with only valid pixels
-    for (size_t j = 1; j < adj.height; ++j) {
-        for (size_t i = 1; i < adj.width; ++i) {
+    const int kwidth = 15;
+    const int kwidthd2 = kwidth / 2;
+    for (size_t j = kwidthd2; j < adj.height - kwidthd2; ++j) {
+        for (size_t i = kwidthd2; i < adj.width - kwidthd2; ++i) {
 
-            const cv::Rect cRect(i - 1, j - 1, 3, 3);
+            uint32_t comb = 0;
+            uchar count = 0;
 
-            uchar comb = 0;
-            for (size_t x = i - 1; x < i + 2; ++x) {
-                for (size_t y = j - 1; y < j + 2; ++y) {
+            const cv::Point2i currPoint(i, j);
+            for (size_t x = i - kwidthd2; x < i + kwidthd2 + 1; ++x) {
+                for (size_t y = j - kwidthd2; y < j + kwidthd2 + 1; ++y) {
                     const cv::Vec2f flow = flowMat.at<cv::Vec2f>(x, y);
-                    const cv::Point2i ctrib(x + flow[0], y + flow[1]);
+                    const cv::Point2i ctrib(::round(x + flow[0]), ::round(y + flow[1]));
 
-                    if (ctrib.inside(cRect)) {
+                    if (ctrib == currPoint) {
                         comb += sqrFirst.at<uchar>(x, y);
+                        ++count;
                     }
                 }
             }
 
             if (comb > 0) {
-                buff.at<uchar>(i, j) = comb / 9;
+                buff.at<uchar>(i, j) = (uchar)(comb / count);
             }
         }
     }
@@ -185,11 +190,11 @@ int main(int argc, char** argv )
     assert(firstImg.size() == nextImg.size());
 
     MotionParams params = { 0.5,
-            3,      // levels
-            5,      // win size
-            10,     // iterations
-            5,      // poly_n
-            1.2 };  // poly_sigma
+            5,      // levels
+            13,      // win size
+            15,     // iterations
+            9,      // poly_n
+            5.3 };  // poly_sigma
 
     const cv::Mat out = predictNextFrame(firstImg, nextImg, params);
 
@@ -197,6 +202,10 @@ int main(int argc, char** argv )
     // the predicted
     cv::Mat diffMat;
     cv::absdiff(nextImg, out, diffMat);
+
+    showImage("out", out);
+    showImage("diff", diffMat);
+    cv::waitKey(0);
 
     cv::Scalar mean, dev;
     cv::meanStdDev(diffMat, mean, dev, out);
