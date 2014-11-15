@@ -63,26 +63,16 @@ void calculateI(const std::vector<cv::Mat> &images, const cv::Vec<float, width> 
     I.copyTo(outI);
 }
 
-template <int width>
+template <int dWidth, int nWidth>
 void houghTransform(const cv::Mat &I, cv::Mat &out) {
-    CV_Assert(width % 2 == 1);
+    CV_Assert(dWidth % 2 == 1 && nWidth % 2 == 1);
 
-    const int WIDTHD2 = width / 2;
+    const int D_WIDTHD2 = dWidth / 2;
+    const int N_WIDTHD2 = nWidth / 2;
 
-    cv::Mat outMat = cv::Mat::zeros(I.size(), CV_32FC3);
-
-    // load an intermediate buffer with all of the points computing -I_x / I_y, -I_t / I_y
-    cv::Mat uvbuff = cv::Mat::zeros(I.size(), CV_32FC3);
-
-    cv::Mat binImg = cv::Mat::zeros(I.size(), CV_8U);
-
-    const float threshold = 5.;
-
-//    cout << "i = " << WIDTHD2 << " -> " << I.rows - WIDTHD2 - 1 << endl;
-//    cout << "j = " << WIDTHD2 << " -> " << I.cols - WIDTHD2 - 1 << endl;
-
-    for (int i = WIDTHD2; i < I.rows - WIDTHD2 - 1; ++i ) {
-        for ( int j = WIDTHD2; j < I.cols - WIDTHD2 - 1; ++j ) {
+    cv::Mat uvbuff = cv::Mat::zeros(I.size(), CV_32FC2);
+    for (int i = D_WIDTHD2; i < I.rows - D_WIDTHD2 - 1; ++i ) {
+        for ( int j = D_WIDTHD2; j < I.cols - D_WIDTHD2 - 1; ++j ) {
             const cv::Vec3f vI = I.at<cv::Vec3f>(i, j);
             const float ix = vI[0],
                   iy = vI[1],
@@ -92,48 +82,76 @@ void houghTransform(const cv::Mat &I, cv::Mat &out) {
             const float v = -1. * it / iy;
 
             if (std::abs(iy) > 0.01) {
-                uvbuff.at<cv::Vec3f>(i, j) = cv::Vec3f(u, v, std::sqrt(u*u + v*v));
-            } else {
-                uvbuff.at<cv::Vec3f>(i, j) = cv::Vec3f(0, 0, 0);
+                uvbuff.at<cv::Vec2f>(i, j) = cv::Vec2f(u, v);
             }
-
-            if (std::abs(iy) > 0.01 && std::abs(u) > threshold && std::abs(v) > threshold) {
-                binImg.at<uchar>(i, j) = 255;
-            } else {
-                binImg.at<uchar>(i, j) = 0;
-            }
-
-//            cout << "uvbuff[" << i << ", " << j << "] = " << uvbuff.at<cv::Vec2f>(i, j) << std::endl;
         }
     }
 
-    cv::Mat uvRGB(uvbuff.size(), CV_8UC3);
-    cv::cvtColor(uvbuff / uchar(255), uvRGB, CV_HSV2RGB);
+    using std::vector;
 
-    cv::Mat uvGrey(uvRGB.size(), CV_8U);
-    cv::cvtColor(uvRGB, uvGrey, CV_RGB2GRAY);
+    vector<vector<double>> minMax(2);
+    vector<cv::Mat> uvbuffSpl(2);
+    cv::split(uvbuff, uvbuffSpl);
 
-    cout << uvGrey.depth() << endl;
+    for (int i = 0; i < 2; ++i) {
+        const cv::Mat m = uvbuffSpl[i];
 
-    cv::Mat uvGrey8U;
-    uvGrey.convertTo(uvGrey8U, CV_8U);
+        double min = std::numeric_limits<double>::max(),
+                max = std::numeric_limits<double>::min();
 
-    cv::Mat uvCanny;
-    cv::Canny(uvGrey8U, uvCanny, 1, 1);
+        cv::minMaxIdx(m, &min, &max);
+        minMax[i] = { min, max };
+    }
 
-//    uvbuff.copyTo(out);
+    cout << "x = " << minMax[0][0] << ", " << minMax[0][1] << endl;
+    cout << "y = " << minMax[1][0] << ", " << minMax[1][1]<< endl;
 
-    cv::Mat flow(uvCanny.size(), CV_32FC3);
-    for (int i = WIDTHD2; i < I.rows - WIDTHD2 - 1; ++i ) {
-        for ( int j = WIDTHD2; j < I.cols - WIDTHD2 - 1; ++j ) {
-            const cv::Rect roiRect(j - WIDTHD2, i - WIDTHD2, width, width);
-            const cv::Mat roi = binImg(roiRect);
+    const cv::Point2i xval(std::floor(minMax[0][0] - N_WIDTHD2), std::ceil(minMax[0][1] + N_WIDTHD2 + 1.)),
+                  yval(std::floor(minMax[1][0] - N_WIDTHD2), std::ceil(minMax[1][1] + N_WIDTHD2 + 1.));
+
+    cout << "xsize = " << xval << ", ysize = " << yval << endl;
+
+    cv::Mat uvSpace = cv::Mat::zeros(cv::Size2i(xval.y - xval.x, yval.y - yval.x), CV_8UC1);
+
+    for (int i = D_WIDTHD2; i < I.rows - D_WIDTHD2 - 1; ++i ) {
+        for ( int j = D_WIDTHD2; j < I.cols - D_WIDTHD2 - 1; ++j ) {
+            const cv::Point2f uv = uvbuff.at<cv::Point2f>(i, j);
+            uvSpace.at<uchar>(int(uv.x - xval.x), int(uv.y - yval.x)) = 1;
+        }
+    }
+
+    // uvSpace holds a binary image with a mapping of (x, y) -> (u, v)
+
+    cv::Mat outMat(I.size(), CV_32FC2);
+    for (int i = D_WIDTHD2; i < I.rows - D_WIDTHD2 - 1; ++i ) {
+        for ( int j = D_WIDTHD2; j < I.cols - D_WIDTHD2 - 1; ++j ) {
+
+            const cv::Point2f uv = uvbuff.at<cv::Point2f>(i, j);
+
+            if (uv.x == 0 || uv.y == 0) {
+                // ignore these pts
+                continue ;
+            }
 
             cv::Mat lines;
-            cv::HoughLines(roi, lines, 1, CV_PI/180, width);
+            cv::Rect roiRect(uv.x - N_WIDTHD2 - xval.x, uv.y - N_WIDTHD2 - yval.x, nWidth, nWidth);
+            try {
+                const cv::Mat roi = uvSpace(roiRect);
 
-            cv::Vec3f maxLine(0, 0, std::numeric_limits<float>::min());
-            if (lines.rows * lines.cols > 0) {
+                cv::HoughLines(roi, lines, 1, CV_PI/180, nWidth);
+            } catch (cv::Exception &e) {
+                cout << "e = " << e.what() << endl;
+
+                cout << "rect = " << roiRect << endl;
+                cout << "uvSpace = " << uvSpace.size() << ": rows, cols = " << uvSpace.rows << ", " << uvSpace.cols << endl;
+
+                throw e;
+            }
+
+            bool linesFound = lines.rows * lines.cols > 0;
+            cv::Vec2f maxLine;
+            // if there are lines
+            if (linesFound) {
                 float maxDot = std::numeric_limits<float>::min();
 
                 for (int k = 0; k < lines.rows; ++k) {
@@ -141,58 +159,21 @@ void houghTransform(const cv::Mat &I, cv::Mat &out) {
                     const float dot = line.dot(line);
                     if (maxDot < dot) {
                         maxDot = dot;
-                        maxLine = cv::Vec3f(line[1], line[0], dot);
+                        maxLine = line;
                     }
                 }
             }
 
-            if (maxLine[2] > std::numeric_limits<float>::min()) {
+            if (linesFound) {
                 // we found a value
-                flow.at<cv::Vec3f>(i, j) = maxLine;
+                outMat.at<cv::Vec2f>(i, j) = maxLine;
             } else {
-                flow.at<cv::Vec3f>(i, j) = cv::Vec3f(0, 0, 0);
+                outMat.at<cv::Vec2f>(i, j) = cv::Vec2f(0, 0);
             }
         }
     }
 
-    // flow mat has the flow vectors
-    cv::blur(flow, out, cv::Size(3, 3));
-
-//    for ( int j = WIDTHD2; j < I.cols - WIDTHD2; ++j ) {
-//        for (int i = WIDTHD2; i < I.rows - WIDTHD2; ++i ) {
-
-//            // for a neighbourhood, collect the u,v points for fitting
-//            std::vector<cv::Vec2f> pts(WIDTHD2 * WIDTHD2);
-//            for (int y = -WIDTHD2; y < WIDTHD2; ++y) {
-//                for (int x = -WIDTHD2; x < WIDTHD2; ++x) {
-//                    pts.push_back(uvbuff.at<cv::Vec2f>(i + x, j + y));
-//                }
-//            }
-
-////            std::cout << "pts(" << i << ", " << j << ") = [";
-
-////            for (cv::Vec2f v : pts) {
-////                std::cout << v;
-
-////                if (v != *pts.end()) {
-////                    std::cout << ", ";
-////                }
-////            }
-////            std::cout << std::endl;
-
-//            // fit the line, use least squares
-//            cv::Vec4f line;
-//            cv::fitLine(pts, line, CV_DIST_L2, 0, 0.01, 0.01);
-
-//            const float x = line[0] * line[2];
-//            const float y = line[1] * line[3];
-
-//            // we now have the transformed line as optical flow
-//            outMat.at<cv::Vec3f>(i, j) = cv::Vec3f(x, y, std::sqrt(x*x + y*y));
-//        }
-//    }
-
-//    outMat.copyTo(out);
+    outMat.copyTo(out);
 }
 
 #define PYR_COUNT 0
@@ -228,13 +209,15 @@ int main(int argc, char** argv )
     calculateI<5>(imgs, deriv, I);
 
     cv::Mat output;
-    houghTransform<5>(I, output);
+    houghTransform<5, 45>(I, output);
 
 
     cv::Mat mImg = imgs[2];
     cv::Mat hsvImg = output;
 
-//    showImage("HSV Output", output);
+    showImage("HSV Output", output);
+
+    cv::waitKey(0);
 
 //    std::cout << "output = " << cv::format(output, "python") << std::endl;
 
