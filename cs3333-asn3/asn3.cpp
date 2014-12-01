@@ -27,9 +27,10 @@ using std::endl;
 void showImage(const std::string &title, const cv::Mat &src) {
     cv::namedWindow(title, CV_WINDOW_AUTOSIZE );
     cv::imshow(title, src);
-
-   // cv::waitKey(0);
 }
+
+// Width of the neighbourhood
+static const int NEIGHBOURHOOD = 45;
 
 int main(int argc, char** argv )
 {
@@ -56,12 +57,12 @@ int main(int argc, char** argv )
         assert(fsize == imgs[i].size());
     }
 
-    // 5 point central difference
+    // declare 5 point central difference
     const cv::Vec<float, 5> deriv = cv::Vec<float, 5>(1., -8., 0., 8., -1.) / 12.;
 
     // compute the image motion
     cv::Mat motionImg;
-    imageMotion<5, 45>(imgs, deriv, motionImg);
+    imageMotion<NEIGHBOURHOOD>(imgs, deriv, motionImg);
     
     // the magnitudes are all in full value, normalize them: 
     cv::Mat normalizedMotion;
@@ -74,16 +75,8 @@ int main(int argc, char** argv )
     cv::Mat bgrMidImg;
     cv::cvtColor(midImg, bgrMidImg, CV_GRAY2BGR, 3);
     
-    for (int i = 0; i < midImg.rows; ++i) {
-        for (int j = 0; j < midImg.cols; ++j) {
-            const cv::Vec3f &bgr = bgrImg.at<cv::Vec3f>(i, j);
-            if (bgr != cv::Vec3f::zeros()) {
-                bgrMidImg.at<cv::Vec3b>(i, j) += cv::Vec3b(std::round(255. * bgr[0]), 
-                                                          std::round(255. * bgr[1]), 
-                                                          std::round(255. * bgr[2]));
-            }  
-        }
-    }
+    // the bgrImg is in 0.0..1.0 RGB, convert it to 0..255 and add it to bgrMidImg
+    cv::add(bgrMidImg, 255. * bgrImg, bgrMidImg, cv::noArray(), CV_8UC3);
     
     showImage("Motion Output", bgrImg);
     showImage("Composite Image", bgrMidImg);
