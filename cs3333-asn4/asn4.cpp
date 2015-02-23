@@ -247,24 +247,37 @@ int main(int argc, char** argv )
 //        }
 //    }
 
-//    std::vector<cv::Point2f> newCoords;
-//    cv::perspectiveTransform(coords, newCoords, H);
+    double min = std::numeric_limits< double >::max();
+    for (cv::DMatch match : matches) {
+        if (match.distance < min) {
+            min = match.distance;
+        }
+    }
+    
+    const double thresh = min * 3.;
+    
+    std::vector< cv::DMatch > goodMatches;
+    for (cv::DMatch match: matches) {
+        if (match.distance < thresh) {
+            goodMatches.push_back(match);
+        }
+    }
+    
+    // we have good matches now based on a thresholding
+    cv::Mat display;
+    cv::drawMatches(img1, pts1, img2, pts2, goodMatches, display);
+    
+    std::vector<cv::Point2f> obj;
+    std::vector<cv::Point2f> scene;
 
-//    for (int i = 0; i < coords.size(); ++i) {
-//        const cv::Point2i newPt(std::round(newCoords[i].x + origin.x), std::round(newCoords[i].y + origin.y));
-//        stiched.at<cv::Vec3b>(newPt) = imgA.at<cv::Vec3b>(cv::Point2i(coords[i].x, coords[i].y));
-//    }
-
-//    cv::Point2f tl(std::numeric_limits<float>::max(), std::numeric_limits::max()),
-//            br(std::numeric_limits<float>::min(), std::numeric_limits::min());
-//    for (cv::Point2f pt : newCoords) {
-//        for (int i = 0; i < 2; ++i) {
-//            tl[i] = std::min(tl[i], pt[i]);
-//            br[i] = std::max(br[i], pt[i]);
-//        }
-//    }
-
-
+    for( cv::DMatch match : goodMatches )
+    {
+        //-- Get the keypoints from the good matches
+        obj.push_back( pts2[ match.queryIdx ].pt );
+        scene.push_back( pts2[ match.trainIdx ].pt );
+    }
+    
+    cv::Mat H = findHomography( obj, scene, CV_RANSAC );
 
 //    cv::Mat display;
 //    cv::drawMatches(imgA, ptsA, imgB, ptsB, goodMatches, display);

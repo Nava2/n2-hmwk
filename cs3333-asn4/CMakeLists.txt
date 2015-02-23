@@ -11,7 +11,7 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x")
 # find OpenCV
 find_package( OpenCV REQUIRED )
 
-add_executable( asn4 asn4.cpp ImageMotion.h)
+add_executable( asn4 asn4.cpp )
 
 target_link_libraries( asn4
     ${OpenCV_LIBS} )
