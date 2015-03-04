@@ -52,15 +52,25 @@ SET( PROV_SRCS
     "src/fileRead.cpp"
 )
 
+SET( LIB_HEADERS
+    "include/kbright2/database.h"
+)
+
+SET( LIB_SRCS
+
+)
+
 SET( P1_HEADERS
     # "include/kbright2/p1/..."
 )
 
 SET( P1_SRCS
-    "src/p1/main.cpp"
+    "src/kbright2/p1/main.cpp"
 )
 
 add_executable("${PROJECT_NAME}-test" "test.cpp" ${PROV_HEADERS} ${PROV_SRCS})
 
-add_executable("${PROJECT_NAME}-p1" ${P1_HEADERS} ${P1_SRCS} ${PROV_HEADERS} ${PROV_SRCS})
+add_executable("${PROJECT_NAME}-p1" ${P1_HEADERS} ${P1_SRCS}
+    ${LIB_HEADERS} ${LIB_SRCS}
+    ${PROV_HEADERS} ${PROV_SRCS})
 

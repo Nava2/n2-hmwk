@@ -31,7 +31,7 @@ typedef string T;   // Currently tests string language model.
 void test() {
 	
 	unsigned int n = 2;                // specifies the "n" for the nGram model
-    string filename = "./texts/testFile.txt";      // text for language modeling
+    string filename = "texts/DostoevskyGambler.txt";      // text for language modeling
 	
     cout << "Reading file: " << filename << endl;
     cout << "Testing language model with n = " << n << endl;
@@ -112,6 +112,8 @@ void test() {
 
 int main(int argc, char **argv)
 {
+    cout << "exec: " << argv[0] << endl;
+
 	test();    // Currently test the word model
 	           // For char model, uncomment char and comment string template definition 
 	           // in the beginning of the file
