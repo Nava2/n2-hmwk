@@ -60,13 +60,15 @@ inline void read_tokens(const std::string& filename, std::vector<std::string>& t
 		fr.readStringTokensEOS(tokens);  //  reads string tokens with EOS marker
 	else
 		fr.readStringTokens(tokens);        //  reads string tokens without EOS marker
+        
+    tokens.shrink_to_fit();
 }
 
 //////////////////////////////////////////////////////////////////////
 
 inline void read_tokens(const std::string& filename, std::vector<char>& tokens, bool latin_only) {
     std::ifstream fr(filename);
-	for (char token; fr >> token;)
+	for (char token; fr >> token;) {
 		if (!latin_only )
 			tokens.push_back(token);
         else  if (  (('a' <= token) && (token <= 'z')) || (('A' <= token) && (token <= 'Z')) ){
@@ -74,6 +76,10 @@ inline void read_tokens(const std::string& filename, std::vector<char>& tokens, 
                 token += 32; // make capitals lowercase
 			tokens.push_back(token);
 		}
+    }
+		
+    
+    tokens.shrink_to_fit();
 }
 
 #endif

@@ -68,10 +68,10 @@ SET( P1_HEADERS
 )
 
 SET( P1_SRCS
-    "src/kbright2/p1/main.cpp"
+    "src/kbright2/p1/p1.cpp"
 )
 
-add_executable("${PROJECT_NAME}-p1" ${P1_HEADERS} ${P1_SRCS}
+add_executable("P1" ${P1_HEADERS} ${P1_SRCS}
     ${LIB_HEADERS} ${LIB_SRCS}
     ${PROV_HEADERS} ${PROV_SRCS})
 
@@ -80,9 +80,9 @@ SET( P2_HEADERS
 )
 
 SET( P2_SRCS
-    "src/kbright2/p2/main.cpp"
+    "src/kbright2/p2/p2.cpp"
 )
 
-add_executable("${PROJECT_NAME}-p2" ${P2_HEADERS} ${P2_SRCS}
+add_executable("P2" ${P2_HEADERS} ${P2_SRCS}
     ${LIB_HEADERS} ${LIB_SRCS}
     ${PROV_HEADERS} ${PROV_SRCS})

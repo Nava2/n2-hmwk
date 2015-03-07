@@ -8,6 +8,8 @@
 
 #include "kbright2/database.h"
 
+using namespace kbright2;
+
 /**
  * Computes the difference between two databases, returning the count and percentage as `size_t` and `double`
  * respectively.
@@ -18,19 +20,20 @@
  * @return std::pair with the count of differences in std::pair::first and the percentage of total in std::pair::second
  */
 template <typename T>
-const std::pair<std::size_t, double> computeDifference(const kbright2::Database<T>& first,
-                                                       const kbright2::Database<T>& second,
+const std::pair<std::size_t, double> computeDifference(const Database<T>& first,
+                                                       const Database<T>& second,
+                                                       const size_t n, 
                                                        const bool print) {
 
-    const kbright2::Database<T> inter = second.notIn(first);
+    const auto inter = second.notIn(first);
 
-    const std::pair<std::size_t, double> out(inter.db().size(), 1.0 * inter.db().size() / second.db().size());
+    const std::pair<std::size_t, double> out(inter.ngramCount(n), 1.0 * inter.ngramCount(n) / second.ngramCount(n));
 
     std::cout << std::setprecision(3) << out.second << std::endl;
     if (print) {
-        for (const auto &pair: inter.db()) {
-            for (const auto & v: pair.first )
-                std::cout << v;
+        for (const auto& ngram: inter.ngrams(n)) {
+            for (const auto& v: *ngram)
+                std::cout << v << ' ';
             std::cout << std::endl;
         }
     }
@@ -64,7 +67,7 @@ int main(const int argc, const char** argv) {
 
     if (argc != 5) {
         std::cerr << "Invalid arguments passed. " << std::endl;
-        std::cerr << "Usage: cs4442b-asn2-p1 <firstInputText:string> <secondInputText:string> <nGramCount:int> <print:bool>" << std::endl;
+        std::cerr << "Usage: P1 <firstInputText:string> <secondInputText:string> <nGramCount:int> <print:bool>" << std::endl;
 
         return 1;
     }
@@ -73,9 +76,10 @@ int main(const int argc, const char** argv) {
 
     std::cout << input << std::endl;
 
-    const kbright2::Database<std::string> first(input.n, input.first), second(input.n, input.second);
+    const auto first = DatabaseFactory::createFromFile<std::string>(input.n, input.first), 
+            second = DatabaseFactory::createFromFile<std::string>(input.n, input.second);
 
-    computeDifference(first, second, input.shouldPrint);
+    computeDifference(first, second, input.n, input.shouldPrint);
 
     return 0;
 }
