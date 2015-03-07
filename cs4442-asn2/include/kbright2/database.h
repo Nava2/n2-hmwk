@@ -14,19 +14,23 @@ class Database {
 
 public:
 
-    Database(const std::size_t N, const std::string inputPath, const bool readEOS = false)
-        : _n(N) {
-        initializeDbFromFile(inputPath, readEOS);
-        initNgramVector();
+    static Database<T> createFromFile(const size_t N, const std::string &path, const bool readEOS = false) {
+        std::vector<std::string> tokens;
+        read_tokens(path, tokens, readEOS);
+
+        return new Database<T>(N, tokens);
     }
 
-    Database(const std::size_t N, const std::unordered_map<std::vector<T>, std::size_t> &copy)
-        : _n(N),
-          _db(copy) {
-        initNgramVector();
+    static Database<T> create(const size_t N, const std::unordered_map<std::vector<T>, std::size_t> &copy) {
+        return new Database<T>(N, copy);
     }
 
-    ~Database() { }
+    static Database<T> createMultiGram(const size_t N, const std::string &path, const bool readEOS = false) {
+        std::vector<std::string> tokens;
+        read_tokens(path, tokens, readEOS);
+
+        return new Database<T>(N, tokens);
+    }
 
     const std::size_t maxCount() const noexcept {
         return _maxCount;
@@ -45,7 +49,7 @@ public:
     }
 
     const std::size_t n() const noexcept {
-        return _n();
+        return _n;
     }
 
     /**
@@ -84,9 +88,21 @@ public:
 
 private:
 
-    void initializeDbFromFile(const std::string &path, const bool readEOS) {
+    Database(const std::size_t N, const std::vector<std::string> &tokens)
+        : _n(N) {
+        intialize(tokens);
+        initNgramVector();
+    }
 
-        read_tokens(path, _allTokens, readEOS);
+    Database(const std::size_t N, const std::unordered_map<std::vector<T>, std::size_t> &copy)
+        : _n(N),
+          _db(copy) {
+        initNgramVector();
+    }
+
+    ~Database() { }
+
+    void intialize(const std::vector<std::string> &tokens, const bool ) {
 
         if (_allTokens.size() < _n) {
             throw std::out_of_range("Tokens read < minimum ngram size.");
@@ -99,13 +115,15 @@ private:
             std::vector<T> nGram{ _n };   // for temporarily storing tokens to go into next n-gram
 
             // Take next n tokens read from the input file
-            for ( size_t j = 0; j < _n; j++ )
+            for ( size_t j = 0; j < _n; j++ ) {
                 nGram[j] = _allTokens[i+j]; // put next n tokens into vector temp
+            }
 
-            if ( _db.count(nGram) == 0 ) // nGram is not in the database yet, insert it with count 1
+            if ( _db.count(nGram) == 0 ) { // nGram is not in the database yet, insert it with count 1
                 _db[nGram] = 1;
-            else // nGram is already in the database, increase its count by 1
+            } else { // nGram is already in the database, increase its count by 1
                 _db[nGram] += 1;
+            }
 
             _maxCount = std::max(_maxCount, _db[nGram]);
         }
