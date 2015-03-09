@@ -53,6 +53,10 @@ SCENARIO( "Create Databases", "[kbright2::Database]" ) {
         REQUIRE(db.ngramCount(2) == 7);
         REQUIRE(db.ngramCount(3) == 6);
         
+        const auto nWC1 = db.ngramsWithCount(3);
+        REQUIRE(nWC1.size() == 1);
+        REQUIRE(*(nWC1[0]) == NGram<string>("bc"));
+        
         const auto &punis = db.ngrams(1);
         vector<NGram<string> > unis;
         unis.reserve(punis.size());

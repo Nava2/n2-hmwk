@@ -183,6 +183,24 @@ public:
         
         return out;
     }
+    
+    /**
+     * Return the NGram<T>'s with count. 
+     * @param count Amount to search for. 
+     * @return vector of NGrams with count `count`. 
+     */
+    const std::vector<const NGram<T>*> ngramsWithCount(const size_t count) {
+        std::vector<const NGram<T>*> out;
+        
+        const auto range = _countToNGrams.equal_range(count);
+        out.reserve(std::distance(range.first, range.second));
+        
+        for (auto it = range.first; it != _countToNGrams.end() && it != range.second; ++it) {
+            out.push_back(it->second);
+        }
+        
+        return out;
+    }
 
     const NGram<T>& tokens() const noexcept {
         return _allTokens;
@@ -339,6 +357,8 @@ private:
         ngrams.reserve(_db.size());
         std::vector<size_t> ngramCountPerLevel(_n + 1, 0);
         
+        std::unordered_multimap<size_t, const NGram<T>*> count2NGram;
+                
         for (const auto& p: _db) {
             count += p.second.count;
             
@@ -346,6 +366,7 @@ private:
             ngrams.push_back(&p.first);
             
             ngramCountPerLevel[p.first.n()] += p.second.count;
+            count2NGram.insert({ p.second.count, &p.first });
         }
 
         ngrams.shrink_to_fit();
@@ -353,6 +374,7 @@ private:
         _ngramsPerLevel = std::move(ngramCountPerLevel);
         _sentences = parseSentences(_allTokens);
         _maxCount = maxCount;
+        _countToNGrams = std::move(count2NGram);
         
         // calculate the probability of occurance
         for (auto& p : _db) {
@@ -377,6 +399,7 @@ private:
     std::vector<T> _allTokens;
     std::unordered_set<T> _vocab;
     std::vector<std::vector<T>> _sentences;
+    std::unordered_multimap<size_t, const NGram<T>*> _countToNGrams;
     size_t _maxCount;
 
     double _unfoundProb;
