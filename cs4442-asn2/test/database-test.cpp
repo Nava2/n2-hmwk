@@ -41,7 +41,7 @@ SCENARIO( "Create Databases", "[kbright2::Database]" ) {
         REQUIRE(db.maxCount() == 3);
         REQUIRE(db.count(nbcbc) == 2);
         REQUIRE(DBL_EQ(db.prob(nbcbc), 0.2857));
-        REQUIRE(DBL_EQ(db.nprob(nbcbc), 0.6666));  
+        REQUIRE(DBL_EQ(db.depProb(nbcbc), 0.6666));
 
         const auto nprobs = db.getNProbs(vector<NGram<string>>({nbcbc, neos}));
         REQUIRE(DBL_EQ(nprobs[0], 0.6666));

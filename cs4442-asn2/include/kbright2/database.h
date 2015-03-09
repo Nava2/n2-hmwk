@@ -5,9 +5,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <cstdarg>
 #include <limits>
-#include <assert.h>
+#include <functional>
 
 #include "ngram.h"
 #include "utils.h"
@@ -24,7 +23,19 @@ template <typename T>
 class Database {
 
 public: 
-   
+
+    typedef struct {
+        size_t count;
+        double prob;
+        double depProb;
+    } DataValue;
+
+
+    using DataMap = std::unordered_map<NGram<T>, DataValue>;
+
+    typedef std::function<double(const DataMap&, const std::unordered_set<T>&, const NGram<T>&, const size_t, const size_t)> ProbFunc;
+    typedef ProbFunc DependantProbFunc;
+
     Database(const Database<T>&& other)
         : _n(other._n),
           _db(std::move(other._db)),
@@ -71,13 +82,35 @@ public:
         }
     }
     
-    const double nprob(const NGram<T> &ngram) const {
+    const double depProb(const NGram<T> &ngram) const {
         const auto it = _db.find(ngram);
         if (it != _db.end()) {
-            return it->second.nprob;
+            return it->second.depProb;
         } else {
             return 0.0;
         }
+    }
+
+    const double sentenceDepProb(const std::vector<T> &sentence) {
+        double out = 0.0;
+
+        std::unique_ptr<NGram<T>> prev = nullptr;
+        // initialize the first N
+        const auto it = sentence.begin();
+        for (size_t i = 1; i <= n() && it != sentence.end(); ++it, ++i) {
+
+            NGram<T> *n;
+            if (prev) {
+                n = new NGram<T>(prev->asContext(*it));
+            } else {
+                n = new NGram<T>({ *it });
+            }
+            prev = std::unique_ptr<NGram<T>>(n);
+
+            out += std::log(_db[n].depProb);
+        }
+
+        return out;
     }
     
     const std::vector<double> getNProbs(const std::vector<const NGram<T>* >& pngrams) const noexcept {
@@ -96,7 +129,7 @@ public:
         out.reserve(ngrams.size());
         
         for (const auto& ngram: ngrams) {
-            out.push_back(this->nprob(ngram));
+            out.push_back(this->depProb(ngram));
         }
         
         return out;
@@ -152,6 +185,23 @@ public:
         return _n;
     }
     
+    /**
+     * Map the internal data to a new map of type `U`. The function is applied on each element individually.
+     *
+     * @param mfn Function with arguments: `*this`, current NGram, and the count of occurances (this->count(currNgram))
+     * @return new map of data.
+     */
+    template <typename U>
+    const std::unordered_map<const NGram<T>*, U> map(const std::function<U(const Database<T> &, const NGram<T> &, const size_t)> &mfn) const {
+        std::unordered_map<const NGram<T>*, U> out;
+
+        for (const auto &p: _db) {
+            out[&(p.first)] = mfn(*this, p.first, p.second.count);
+        }
+
+        return out;
+    }
+
     template <typename Iterable>
     const Database<T> merge(const Iterable& others) {
         std::unordered_map<NGram<T>, std::size_t> out(_db);
@@ -203,28 +253,32 @@ public:
             }
         }
 
-        return Database<T>(_n, std::move(out));
+        return Database<T>(_n, std::move(out), _probFn, _depProbFn);
     }
 
 private:
     
-    typedef struct _DataValue {
-        size_t count;
-        double prob;
-        double nprob;
-    } DataValue;
 
-    Database(const std::size_t N, const std::vector<std::string>& tokens)
+
+    Database(const std::size_t N, const std::vector<std::string>& tokens,
+             Database<T>::ProbFunc probFn,
+             Database<T>::DependantProbFunc depProbFn)
         : _n(N),
+          _probFn(probFn),
+          _depProbFn(depProbFn),
           _allTokens(tokens) {
         intialize();
-        initPostDb();
+        initPostDb(probFn, depProbFn);
     }
 
-    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>&& copy)
+    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>&& copy,
+             Database<T>::ProbFunc probFn,
+             Database<T>::DependantProbFunc depProbFn)
         : _n(N),
+          _probFn(probFn),
+          _depProbFn(depProbFn),
           _db(copy) {
-        initPostDb();
+        initPostDb(probFn, depProbFn);
     }
     
     Database<T> &operator=(const Database<T>& other) = delete;
@@ -259,13 +313,14 @@ private:
                 
                 ++count;
             }
-            
+
+            _vocab.insert(_allTokens[i]);
         }
         
         _db = std::move(tdb);
     }
     
-    void initPostDb() {
+    void initPostDb(typename Database<T>::ProbFunc probFn, typename Database<T>::DependantProbFunc depProbFn) {
         size_t count = 0;
         auto maxCount = std::numeric_limits<std::size_t>::min();
         
@@ -286,17 +341,13 @@ private:
         
         // calculate the probability of occurance
         for (auto& p : _db) {
-            p.second.prob = 1.0 * p.second.count / ngramCountPerLevel[p.first.n()]; 
+            p.second.prob = probFn(_db, _vocab, p.first, p.second.count, ngramCountPerLevel[p.first.n()]);
         }
         
         
         // compute the dependant probabilities
         for (auto& p : _db) {
-            if (p.first.n() == 1) { // no such thing as a 0-gram..
-                p.second.nprob = p.second.prob;
-            } else {
-                p.second.nprob = 1.0 * p.second.count / _db[p.first.contextNgram()].count;
-            }
+            p.second.depProb = depProbFn(_db, _vocab, p.first, p.second.count, ngramCountPerLevel[p.first.n()]);
         }
         
         _ngrams = std::move(ngrams);
@@ -305,16 +356,74 @@ private:
         _maxCount = maxCount;
     }
 
-    const std::size_t _n;
+    const size_t _n;
+    const ProbFunc _probFn;
+    const DependantProbFunc _depProbFn;
 
     std::unordered_map<NGram<T>, DataValue> _db;
     std::vector<const NGram<T> *> _ngrams;
     std::vector<size_t> _ngramsPerLevel;
     std::vector<T> _allTokens;
+    std::unordered_set<T> _vocab;
     std::vector<std::vector<T>> _sentences;
-    std::size_t _maxCount;
+    size_t _maxCount;
+
+
     
-    friend DatabaseFactory;
+    friend class DatabaseFactory;
+};
+
+class NGramProbFunc {
+public:
+    template <typename T>
+    static double simpleProbability(const typename Database<T>::DataMap&, const std::unordered_set<T>&,
+                                    const NGram<T>&, // unused params
+                                    size_t count, const size_t ncount) {
+        return (1.0 * count) / ncount;
+    }
+
+    template <typename T>
+    static double mle(const typename Database<T>::DataMap& otherInfo, const std::unordered_set<T>&,
+                      const NGram<T>& ngram, const size_t count, const size_t ncount) {
+        if (ngram.n() == 1) { // no such thing as a 0-gram..
+            const auto it = otherInfo.find(ngram);
+            if (it != otherInfo.end()) {
+                return it->second.prob;
+            } else {
+                throw std::invalid_argument("ngram is not found in otherInfo");
+            }
+        } else {
+            const auto ctxtIt = otherInfo.find(ngram.contextNgram());
+            if (ctxtIt != otherInfo.end()) {
+                return (1.0 * count) / ctxtIt->second.count;
+            } else {
+                throw std::invalid_argument("ngram's context is invalid in otherInfo");
+            }
+
+        }
+    }
+
+    template <typename T>
+    static double dependantProb(const typename Database<T>::DataMap& other, const std::unordered_set<T>&,
+                                const NGram<T>& that, const size_t, const size_t) {
+         const auto tit = other.find(that);
+         if (tit == other.end()) {
+             throw std::invalid_argument("Could not find 'that' ngram's data");
+         }
+
+         if (that.n() > 1) {
+             const auto oit = other.find(that.contextNgram());
+             if (oit != other.end()) {
+                 // it wasn't a zero ngram
+                 return tit->second.prob / oit->second.prob;
+             }
+
+         }
+
+         return tit->second.prob;
+     }
+
+
 };
 
 /**
@@ -325,22 +434,28 @@ class DatabaseFactory {
 public:
     
     template <typename U>
-    static Database<U> createFromFile(const size_t N, const std::string &path, const bool readEOS = false) {
+    static Database<U> createFromFile(const size_t N, const std::string &path, const bool readEOS = false,
+                                      typename Database<U>::ProbFunc probFn = &NGramProbFunc::simpleProbability<U>,
+                                      typename Database<U>::DependantProbFunc depProbFn = &NGramProbFunc::mle<U>) {
         std::vector<U> tokens;
         read_tokens(path, tokens, readEOS);
         tokens.shrink_to_fit();
 
-        return Database<U>(N, tokens);
+        return DatabaseFactory::createFromTokens<U>(N, tokens, probFn, depProbFn);
     }
     
     template <typename U>
-    static Database<U> createFromTokens(const size_t N, const std::vector<U>& tokens) {
-        return Database<U>(N, tokens);
+    static Database<U> createFromTokens(const size_t N, const std::vector<U>& tokens,
+                                        typename Database<U>::ProbFunc probFn = &NGramProbFunc::simpleProbability<U>,
+                                        typename Database<U>::DependantProbFunc depProbFn = &NGramProbFunc::mle<U>) {
+        return Database<U>(N, tokens, probFn, depProbFn);
     }
 
     template <typename U>
-    static Database<U> create(const size_t N, const std::unordered_map<std::vector<U>, std::size_t> &copy) {
-        return Database<U>(N, copy);
+    static Database<U> create(const size_t N, const std::unordered_map<std::vector<U>, std::size_t> &copy,
+                              typename Database<U>::ProbFunc probFn = &NGramProbFunc::simpleProbability<U>,
+                              typename Database<U>::DependantProbFunc depProbFn = &NGramProbFunc::mle<U>) {
+        return Database<U>(N, copy, probFn, depProbFn);
     }
 };
 

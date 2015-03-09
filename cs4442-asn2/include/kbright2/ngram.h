@@ -55,8 +55,22 @@ public:
         return _val;
     }
   
-    const NGram<T> contextNgram() const noexcept {
+    const NGram<T> contextNgram() const {
+        if (_N == 1) {
+            throw std::invalid_argument("N == 1, can not create context NGram");
+        }
         return NGram<T>(_context);
+    }
+
+    const NGram<T> asContext(const T& value) const {
+        std::vector<T> context;
+        context.reserve(_N - 2);
+        if (_N > 1) {
+            context.insert(context.begin(), _context.begin() + 1, _context.end());
+            context.insert(context.end(), this->value());
+        }
+
+        return NGram<T>(value, context);
     }
     
     static std::vector<NGram<T> > createCombinations(const std::vector<T>& values, const std::vector<T>& context) {

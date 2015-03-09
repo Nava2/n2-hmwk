@@ -59,6 +59,7 @@ add_executable("${PROJECT_NAME}-test" "test.cpp" ${PROV_HEADERS} ${PROV_SRCS})
 
 SET( LIB_HEADERS
     "include/kbright2/database.h"
+    "include/kbright2/utils.h"
 )
 
 SET( LIB_SRCS
@@ -102,6 +103,18 @@ SET( P3_SRCS
 )
 
 add_executable("P3" ${P3_HEADERS} ${P3_SRCS}
+    ${LIB_HEADERS} ${LIB_SRCS}
+    ${PROV_HEADERS} ${PROV_SRCS})
+
+SET( P4_HEADERS
+    # "include/kbright2/p1/..."
+)
+
+SET( P4_SRCS
+    "src/kbright2/p4/p4.cpp"
+)
+
+add_executable("P4" ${P4_HEADERS} ${P4_SRCS}
     ${LIB_HEADERS} ${LIB_SRCS}
     ${PROV_HEADERS} ${PROV_SRCS})
     

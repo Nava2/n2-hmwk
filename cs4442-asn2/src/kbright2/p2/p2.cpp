@@ -59,7 +59,7 @@ int main(const int argc, const char** argv) {
         
         for (size_t i = 0; (i < (sentence.size() - input.n + 1)) && sentenceProb == 0.0; ++i) {
             const NGram<std::string> ngram(sentence.begin() + i + input.n - 1, sentence.begin() + i, sentence.begin() + i + input.n - 1);
-            sentenceProb += train.nprob(ngram);
+            sentenceProb += train.depProb(ngram);
         }
         
         if (sentenceProb == 0.0) {
