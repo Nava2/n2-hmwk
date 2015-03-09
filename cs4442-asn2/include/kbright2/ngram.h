@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <math.h>
 
 namespace kbright2 { 
     
@@ -64,7 +65,7 @@ public:
 
     const NGram<T> asContext(const T& value) const {
         std::vector<T> context;
-        context.reserve(_N - 2);
+        context.reserve(std::max(0, int(_N) - 2));
         if (_N > 1) {
             context.insert(context.begin(), _context.begin() + 1, _context.end());
             context.insert(context.end(), this->value());

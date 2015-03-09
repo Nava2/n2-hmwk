@@ -33,7 +33,7 @@ public:
 
     using DataMap = std::unordered_map<NGram<T>, DataValue>;
 
-    typedef std::function<double(const DataMap&, const std::unordered_set<T>&, const NGram<T>&, const size_t, const size_t)> ProbFunc;
+    typedef std::function<double(const Database<T>&, const NGram<T>&, const size_t)> ProbFunc;
     typedef ProbFunc DependantProbFunc;
 
     Database(const Database<T>&& other)
@@ -60,6 +60,16 @@ public:
     
     ~Database() noexcept { }
 
+    const T nullValue() const; // dependant on spec
+
+    /**
+     * @brief vocabulary Return the vocabulary (i.e. unique tokens) in the database model.
+     * @return Valid hash set, but may be empty
+     */
+    const std::unordered_set<T>& vocabulary() const noexcept {
+        return _vocab;
+    }
+
     const std::size_t maxCount() const noexcept {
         return _maxCount;
     }
@@ -78,7 +88,7 @@ public:
         if (it != _db.end()) {
             return it->second.prob;
         } else {
-            return 0.0;
+            return _unfoundProb;
         }
     }
     
@@ -87,17 +97,17 @@ public:
         if (it != _db.end()) {
             return it->second.depProb;
         } else {
-            return 0.0;
+            return _unfoundDepProb;
         }
     }
 
-    const double sentenceDepProb(const std::vector<T> &sentence) {
+    const double sentenceDepProb(const std::vector<T> &sentence) const {
         double out = 0.0;
 
         std::unique_ptr<NGram<T>> prev = nullptr;
         // initialize the first N
-        const auto it = sentence.begin();
-        for (size_t i = 1; i <= n() && it != sentence.end(); ++it, ++i) {
+        auto it = sentence.begin(); // be sure to ignore the <END>
+        for (size_t i = 1; i <= n() && it != sentence.end() - 1; ++it, ++i) {
 
             NGram<T> *n;
             if (prev) {
@@ -107,7 +117,7 @@ public:
             }
             prev = std::unique_ptr<NGram<T>>(n);
 
-            out += std::log(_db[n].depProb);
+            out += std::log(this->depProb(*n));
         }
 
         return out;
@@ -338,22 +348,22 @@ private:
         }
 
         ngrams.shrink_to_fit();
-        
-        // calculate the probability of occurance
-        for (auto& p : _db) {
-            p.second.prob = probFn(_db, _vocab, p.first, p.second.count, ngramCountPerLevel[p.first.n()]);
-        }
-        
-        
-        // compute the dependant probabilities
-        for (auto& p : _db) {
-            p.second.depProb = depProbFn(_db, _vocab, p.first, p.second.count, ngramCountPerLevel[p.first.n()]);
-        }
-        
         _ngrams = std::move(ngrams);
         _ngramsPerLevel = std::move(ngramCountPerLevel);
         _sentences = parseSentences(_allTokens);
         _maxCount = maxCount;
+        
+        // calculate the probability of occurance
+        for (auto& p : _db) {
+            p.second.prob = probFn(*this, p.first, p.second.count);
+        }
+        _unfoundProb = probFn(*this, NGram<T>(this->nullValue()), 0);
+        
+        // compute the dependant probabilities
+        for (auto& p : _db) {
+            p.second.depProb = depProbFn(*this, p.first, p.second.count);
+        }
+        _unfoundDepProb = depProbFn(*this, NGram<T>(this->nullValue()), 0);
     }
 
     const size_t _n;
@@ -368,62 +378,59 @@ private:
     std::vector<std::vector<T>> _sentences;
     size_t _maxCount;
 
+    double _unfoundProb;
+    double _unfoundDepProb;
+
 
     
     friend class DatabaseFactory;
 };
 
+template <>
+const std::string Database<std::string>::nullValue() const {
+    return "";
+}
+
+template <>
+const char Database<char>::nullValue() const {
+    return '\0';
+}
+
+
 class NGramProbFunc {
 public:
     template <typename T>
-    static double simpleProbability(const typename Database<T>::DataMap&, const std::unordered_set<T>&,
-                                    const NGram<T>&, // unused params
-                                    size_t count, const size_t ncount) {
-        return (1.0 * count) / ncount;
+    static double simpleProbability(const Database<T>& db, const NGram<T>& that, // unused params
+                                    size_t count) {
+        return (1.0 * count) / db.ngramCount(that.n());
     }
 
     template <typename T>
-    static double mle(const typename Database<T>::DataMap& otherInfo, const std::unordered_set<T>&,
-                      const NGram<T>& ngram, const size_t count, const size_t ncount) {
-        if (ngram.n() == 1) { // no such thing as a 0-gram..
-            const auto it = otherInfo.find(ngram);
-            if (it != otherInfo.end()) {
-                return it->second.prob;
-            } else {
-                throw std::invalid_argument("ngram is not found in otherInfo");
-            }
+    static double mle(const Database<T>& db, const NGram<T>& ngram, const size_t count) {
+        if (count == 0 || ngram.n() == 1) { // no such thing as a 0-gram..
+            const auto prob = db.prob(ngram);
+            return prob;
         } else {
-            const auto ctxtIt = otherInfo.find(ngram.contextNgram());
-            if (ctxtIt != otherInfo.end()) {
-                return (1.0 * count) / ctxtIt->second.count;
+            const auto ctxcount = db.count(ngram.contextNgram());
+            if (ctxcount > 0) {
+                return (1.0 * count) / ctxcount;
             } else {
-                throw std::invalid_argument("ngram's context is invalid in otherInfo");
+                return db.prob(ngram);
             }
-
         }
     }
 
     template <typename T>
-    static double dependantProb(const typename Database<T>::DataMap& other, const std::unordered_set<T>&,
-                                const NGram<T>& that, const size_t, const size_t) {
-         const auto tit = other.find(that);
-         if (tit == other.end()) {
-             throw std::invalid_argument("Could not find 'that' ngram's data");
-         }
+    static double dependantProb(const Database<T>&db, const NGram<T>& that, const size_t) {
+         const auto prob = db.prob(that);
 
          if (that.n() > 1) {
-             const auto oit = other.find(that.contextNgram());
-             if (oit != other.end()) {
-                 // it wasn't a zero ngram
-                 return tit->second.prob / oit->second.prob;
-             }
-
+             const auto oprob = db.prob(that.contextNgram());
+             return prob / oprob;
          }
 
-         return tit->second.prob;
+         return prob;
      }
-
-
 };
 
 /**

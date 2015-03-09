@@ -60,10 +60,8 @@ int main(const int argc, const char** argv) {
 
     const auto delta = input.lmparam;
     const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
-        [&delta](const typename Database<std::string>::DataMap&, const std::unordered_set<std::string>& vocab,
-                 const NGram<std::string>& that, const size_t count, const size_t ncount) -> double {
-
-            return (count + delta) / (ncount + delta * std::pow(vocab.size(), that.n()));
+        [&delta](const Database<std::string>& db, const NGram<std::string>& that, const size_t count) -> double {
+            return (count + delta) / (db.ngramCount(that.n()) + delta * std::pow(db.vocabulary().size(), that.n()));
         }, &NGramProbFunc::dependantProb<std::string>);
 
     vector<std::string> stokens;
@@ -71,10 +69,8 @@ int main(const int argc, const char** argv) {
 
     const auto sentences = parseSentences(stokens);
     for (const auto& sentence: sentences) {
-
+        cout << setprecision(5) << model.sentenceDepProb(sentence) << endl;
     }
-
-
 
     return 0;
 }
