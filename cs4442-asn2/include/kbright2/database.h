@@ -431,6 +431,24 @@ public:
 
          return prob;
      }
+
+    template <typename T>
+    static typename Database<T>::ProbFunc delta_add(const double delta) {
+        return [&delta](const Database<std::string>& db,
+                        const NGram<std::string>& that,
+                        const size_t count) -> double {
+            return (count + delta) / (db.ngramCount(that.n()) + delta * std::pow(db.vocabulary().size(), that.n()));
+        };
+    }
+
+    template <typename T>
+    static typename Database<T>::ProbFunc good_turing(const double delta) {
+        return [&delta](const Database<std::string>& db,
+                        const NGram<std::string>& that,
+                        const size_t count) -> double {
+            return (count + delta) / (db.ngramCount(that.n()) + delta * std::pow(db.vocabulary().size(), that.n()));
+        };
+    }
 };
 
 /**
