@@ -32,9 +32,7 @@ const std::pair<std::size_t, double> computeDifference(const Database<T>& first,
     std::cout << std::setprecision(3) << out.second << std::endl;
     if (print) {
         for (const auto& ngram: inter.ngrams(n)) {
-            for (const auto& v: *ngram)
-                std::cout << v << ' ';
-            std::cout << std::endl;
+            std::cout << ngram << std::endl;
         }
     }
 

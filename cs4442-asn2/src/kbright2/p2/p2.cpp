@@ -58,7 +58,7 @@ int main(const int argc, const char** argv) {
         double sentenceProb = 0.0;
         
         for (size_t i = 0; (i < (sentence.size() - input.n + 1)) && sentenceProb == 0.0; ++i) {
-            const std::vector<std::string> ngram(sentence.begin() + i, sentence.begin() + i + input.n);
+            const NGram<std::string> ngram(sentence.begin() + i + input.n - 1, sentence.begin() + i, sentence.begin() + i + input.n - 1);
             sentenceProb += train.nprob(ngram);
         }
         

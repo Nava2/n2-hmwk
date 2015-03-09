@@ -19,15 +19,16 @@ int drawIndex(std::vector<double> &probs){
 		sum = sum+probs[i];
 	if ( sum < 0.95 || sum > 1.05)
 	{ 
-		printf("\nProbabilities  do not add to 1"); 
-		exit(0);
+		printf("Probabilities  do not add to 1\n"); 
+		throw std::exception();
 	}
 
 	sum = 0;
 	
 	for ( int i = 0; i < size; i++ ){
 		sum = sum + probs[i];
-		if (sum > rNum ) return(i);
+		if (sum > rNum ) 
+            return(i);
 	}
 
 	return(size-1);

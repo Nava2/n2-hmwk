@@ -7,20 +7,24 @@
 #include <vector>
 #include <cstdarg>
 #include <limits>
+#include <assert.h>
 
+#include "ngram.h"
 #include "utils.h"
 #include "VectorHash.h"
 #include "fileRead.h"
 
 namespace kbright2 {
     
+static const std::string EOS_TERM = "<END>";
+    
 class DatabaseFactory; // forward
 
 template <typename T>
 class Database {
 
-public:
-    
+public: 
+   
     Database(const Database<T>&& other)
         : _n(other._n),
           _db(std::move(other._db)),
@@ -49,7 +53,7 @@ public:
         return _maxCount;
     }
 
-    const size_t count(const std::vector<T>& ngram) const {
+    const size_t count(const NGram<T>& ngram) const {
         const auto it = _db.find(ngram);
         if (it != _db.end()) {
             return it->second.count;
@@ -58,7 +62,7 @@ public:
         }
     }
     
-    const double prob(const std::vector<T> &ngram) const {
+    const double prob(const NGram<T> &ngram) const {
         const auto it = _db.find(ngram);
         if (it != _db.end()) {
             return it->second.prob;
@@ -67,13 +71,35 @@ public:
         }
     }
     
-    const double nprob(const std::vector<T> &ngram) const {
+    const double nprob(const NGram<T> &ngram) const {
         const auto it = _db.find(ngram);
         if (it != _db.end()) {
             return it->second.nprob;
         } else {
             return 0.0;
         }
+    }
+    
+    const std::vector<double> getNProbs(const std::vector<const NGram<T>* >& pngrams) const noexcept {
+        std::vector<NGram<std::string> > ngrams;
+        ngrams.reserve(pngrams.size());
+        
+        for (const auto& p: pngrams) {
+            ngrams.push_back(*p);
+        }
+        
+        return this->getNProbs(ngrams);
+    }
+    
+    const std::vector<double> getNProbs(const std::vector<NGram<T> > &ngrams) const noexcept {
+        std::vector<double> out;
+        out.reserve(ngrams.size());
+        
+        for (const auto& ngram: ngrams) {
+            out.push_back(this->nprob(ngram));
+        }
+        
+        return out;
     }
 
     const size_t ngramCount(const int size = -1) const noexcept {
@@ -88,23 +114,23 @@ public:
         return _ngramsPerLevel[size];
     }
     
-    const std::vector<const std::vector<T>* > &ngrams() const noexcept {
+    const std::vector<const NGram<T>* > &ngrams() const noexcept {
         return _ngrams;
     }
     
-    const std::vector<const std::vector<T>* > ngrams(const size_t size) const {
+    const std::vector<const NGram<T>* > ngrams(const size_t size) const {
         if (size == 0) {
-            return std::vector<const std::vector<T>*>(0);
+            return std::vector<const NGram<T>*>(0);
         }
         
         if (size < 0 || size > _n) {
             throw std::out_of_range("Requested out of range ngram size");
         }
         
-        std::vector<const std::vector<T>*> out;
+        std::vector<const NGram<T>*> out;
         out.reserve(_allTokens.size());
         for (const auto& n: _ngrams) {
-            if (n->size() == size) {
+            if (n->n() == size) {
                 out.push_back(n);
             }
         }
@@ -114,11 +140,11 @@ public:
         return out;
     }
 
-    const std::vector<T>& tokens() const noexcept {
+    const NGram<T>& tokens() const noexcept {
         return _allTokens;
     }
     
-    const std::vector<std::vector<T> >& sentences() const noexcept {
+    const std::vector<NGram<T> >& sentences() const noexcept {
         return _sentences;
     }
 
@@ -128,7 +154,7 @@ public:
     
     template <typename Iterable>
     const Database<T> merge(const Iterable& others) {
-        std::unordered_map<std::vector<T>, std::size_t> out(_db);
+        std::unordered_map<NGram<T>, std::size_t> out(_db);
 
         std::size_t mn = _n;
         for (const auto &other: others) {
@@ -152,7 +178,7 @@ public:
      * @return
      */
     const Database<T> intersect(const Database<T> &other) const {
-        std::unordered_map<std::vector<T>, DataValue> out;
+        std::unordered_map<NGram<T>, DataValue> out;
 
         for (const auto &pair: other._db) {
             if (_db.count(pair.first) >= 1) {
@@ -169,7 +195,7 @@ public:
      * @return
      */
     const Database<T> notIn(const Database<T> &other) const {
-        std::unordered_map<std::vector<T>, DataValue> out;
+        std::unordered_map<NGram<T>, DataValue> out;
 
         for (const auto& pair: _db) {
             if (other._db.count(pair.first) == 0) {
@@ -188,14 +214,14 @@ private:
         double nprob;
     } DataValue;
 
-    Database(const std::size_t N, const std::vector<T> &tokens)
+    Database(const std::size_t N, const std::vector<std::string>& tokens)
         : _n(N),
           _allTokens(tokens) {
         intialize();
         initPostDb();
     }
 
-    Database(const std::size_t N, const std::unordered_map<std::vector<T>, DataValue>&& copy)
+    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>&& copy)
         : _n(N),
           _db(copy) {
         initPostDb();
@@ -211,19 +237,20 @@ private:
             throw std::out_of_range("Tokens read < minimum ngram size.");
         }
         
-        unordered_map<vector<T>, DataValue> tdb;
+        unordered_map<NGram<T>, DataValue> tdb;
         
         // intitialize the "database" variables and increment coutns as they're found
         size_t count = 0;
         for (size_t i = 0; i < _allTokens.size(); ++i) {
             for (size_t j = 1; j <= _n && (i + j - 1 < _allTokens.size()); ++j) {
-                std::vector<T> nGram(j);   // for temporarily storing tokens to go into next n-gram
+                vector<T> buff(j);   // for temporarily storing tokens to go into next n-gram
 
                 // Take next n tokens read from the input file
                 for ( size_t k = 0; k < j; ++k ) {
-                    nGram[k] = _allTokens[i + k]; // put next n tokens into vector temp
+                    buff[k] = _allTokens[i + k]; // put next n tokens into vector temp
                 }
 
+                NGram<T> nGram(buff);
                 if ( tdb.count(nGram) == 0 ) { // nGram is not in the database yet, insert it with count 1
                     tdb[nGram] = DataValue{ 1, 0.0, 0.0 };
                 } else { // nGram is already in the database, increase its count by 1
@@ -242,7 +269,7 @@ private:
         size_t count = 0;
         auto maxCount = std::numeric_limits<std::size_t>::min();
         
-        std::vector<const std::vector<T> *> ngrams;
+        std::vector<const NGram<T> *> ngrams;
         ngrams.reserve(_db.size());
         std::vector<size_t> ngramCountPerLevel(_n + 1, 0);
         
@@ -252,23 +279,23 @@ private:
             maxCount = std::max(maxCount, p.second.count);
             ngrams.push_back(&p.first);
             
-            ngramCountPerLevel[p.first.size()] += 1;
+            ngramCountPerLevel[p.first.n()] += p.second.count;
         }
 
         ngrams.shrink_to_fit();
         
         // calculate the probability of occurance
         for (auto& p : _db) {
-            p.second.prob = p.second.count / count; 
+            p.second.prob = 1.0 * p.second.count / ngramCountPerLevel[p.first.n()]; 
         }
         
         
         // compute the dependant probabilities
         for (auto& p : _db) {
-            if (p.first.size() == 1) { // no such thing as a 0-gram..
+            if (p.first.n() == 1) { // no such thing as a 0-gram..
                 p.second.nprob = p.second.prob;
             } else {
-                p.second.nprob = p.second.prob / _db[std::vector<T>(p.first.begin() + 1, p.first.end())].prob;
+                p.second.nprob = 1.0 * p.second.count / _db[p.first.contextNgram()].count;
             }
         }
         
@@ -280,8 +307,8 @@ private:
 
     const std::size_t _n;
 
-    std::unordered_map<std::vector<T>, DataValue> _db;
-    std::vector<const std::vector<T> *> _ngrams;
+    std::unordered_map<NGram<T>, DataValue> _db;
+    std::vector<const NGram<T> *> _ngrams;
     std::vector<size_t> _ngramsPerLevel;
     std::vector<T> _allTokens;
     std::vector<std::vector<T>> _sentences;
@@ -305,30 +332,19 @@ public:
 
         return Database<U>(N, tokens);
     }
+    
+    template <typename U>
+    static Database<U> createFromTokens(const size_t N, const std::vector<U>& tokens) {
+        return Database<U>(N, tokens);
+    }
 
     template <typename U>
     static Database<U> create(const size_t N, const std::unordered_map<std::vector<U>, std::size_t> &copy) {
         return Database<U>(N, copy);
     }
-
-    template <typename U>
-    static Database<U> createMultiGram(const size_t N, const std::string &path, const bool readEOS = false) {
-        std::vector<U> tokens;
-        read_tokens(path, tokens, readEOS);
-        
-        std::vector<Database<U>> dbs { N - 2 };
-        auto iter = dbs.first();
-        for (size_t i = 2; i < N; ++i, ++iter) {
-            dbs.emplace(iter, Database<U>(i, tokens)); 
-        }
-        
-        const Database<U> that(1, tokens);
-
-        return that.merge(dbs);
-    }
 };
 
-}
+} // end kbright2 namespace
 
 
 #endif // __DATABASE_H
