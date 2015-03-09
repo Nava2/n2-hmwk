@@ -17,7 +17,7 @@ using namespace std;
 /**
  * @brief The CLIInput struct holds information parsed from the command line
  */
-typedef struct _CLIInput {
+typedef struct {
     const std::string text;
     const size_t n;
 } CLIInput;

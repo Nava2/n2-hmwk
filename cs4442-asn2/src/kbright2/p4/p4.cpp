@@ -58,11 +58,8 @@ int main(const int argc, const char** argv) {
 
     std::cout << input << std::endl;
 
-    const auto delta = input.lmparam;
     const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
-        [&delta](const Database<std::string>& db, const NGram<std::string>& that, const size_t count) -> double {
-            return (count + delta) / (db.ngramCount(that.n()) + delta * std::pow(db.vocabulary().size(), that.n()));
-        }, &NGramProbFunc::dependantProb<std::string>);
+        NGramProbFunc::delta_add<std::string>(input.lmparam), &NGramProbFunc::dependantProb<std::string>);
 
     vector<std::string> stokens;
     read_tokens(input.sentences, stokens, true);

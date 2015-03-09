@@ -7,6 +7,8 @@
 #include <vector>
 #include <limits>
 #include <functional>
+#include <memory>
+#include <cmath>
 
 #include "ngram.h"
 #include "utils.h"
@@ -107,8 +109,7 @@ public:
         std::unique_ptr<NGram<T>> prev = nullptr;
         // initialize the first N
         auto it = sentence.begin(); // be sure to ignore the <END>
-        for (size_t i = 1; i <= n() && it != sentence.end() - 1; ++it, ++i) {
-
+        while (it != (sentence.end() - 1)) {
             NGram<T> *n;
             if (prev) {
                 n = new NGram<T>(prev->asContext(*it));

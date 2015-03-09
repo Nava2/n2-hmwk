@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <string>
 #include <math.h>
+#include <stdexcept>
 
 namespace kbright2 { 
     
@@ -33,6 +34,17 @@ public:
     NGram(const std::vector<T>& buff) 
         : NGram(buff.end() - 1, buff.begin(), buff.end() - 1) {
     }
+    
+    NGram(const NGram<T> &other)
+        : _N(other._N), _val(other._val), _context(other._context) {
+    }
+    
+    NGram(const NGram<T>&& other)
+        : _N(other._N), _val(other._val), _context(other._context) {
+        
+    }
+    
+    
     
     ~NGram() {
         
@@ -63,22 +75,40 @@ public:
         return NGram<T>(_context);
     }
 
-    const NGram<T> asContext(const T& value) const {
+    const NGram<T> asContext(const T& value, const int sizeN = -1) const {
+        if (sizeN == 0 || sizeN > int(n() + 1)) {
+           throw std::invalid_argument("sizeN must be default or between [1..this->n() + 1].");
+        }
+        
+        const int newN = sizeN == -1 ? n() : sizeN;
+        
         std::vector<T> context;
-        context.reserve(std::max(0, int(_N) - 2));
-        if (_N > 1) {
-            context.insert(context.begin(), _context.begin() + 1, _context.end());
+        context.reserve(std::max(0, newN - 1));
+        if (newN > 1) {
+            context.insert(context.begin(), _context.begin() + std::max(0, (int(this->n()) - int(newN) + 1)), _context.end());
             context.insert(context.end(), this->value());
         }
 
         return NGram<T>(value, context);
     }
     
-    static std::vector<NGram<T> > createCombinations(const std::vector<T>& values, const std::vector<T>& context) {
+    static 
+    std::vector<NGram<T> > createCombinations(const std::vector<T>& values, const std::vector<T>& context) {
         std::vector<NGram<T> > out;
         out.reserve(values.size());
         for (const auto &v : values) {
             out.push_back(NGram<T>(v, context));
+        }
+        
+        return out;
+    }
+    
+    static 
+    std::vector<NGram<T> > createCombinations(const std::vector<T>& values, const NGram<T>& context, int sizeN = -1) {
+        std::vector<NGram<T> > out;
+        out.reserve(values.size());
+        for (const auto &v : values) {
+            out.push_back(context.asContext(v, sizeN));
         }
         
         return out;
