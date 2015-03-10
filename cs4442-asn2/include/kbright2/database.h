@@ -185,6 +185,16 @@ public:
     }
     
     /**
+     * Get the amount of NGrams with `rate` count. 
+     * @param rate Rate to gather.
+     * @return Number of NGrams with rate, `rate`.
+     */
+    const size_t countNGramsWithRate(const size_t rate) {
+        const auto range = _rateToNGrams.equal_range(rate);
+        return std::distance(range.first, range.second);
+    }
+    
+    /**
      * Return the NGram<T>'s with count. 
      * @param count Amount to search for. 
      * @return vector of NGrams with count `count`. 
@@ -192,10 +202,10 @@ public:
     const std::vector<const NGram<T>*> ngramsWithCount(const size_t count) {
         std::vector<const NGram<T>*> out;
         
-        const auto range = _countToNGrams.equal_range(count);
+        const auto range = _rateToNGrams.equal_range(count);
         out.reserve(std::distance(range.first, range.second));
         
-        for (auto it = range.first; it != _countToNGrams.end() && it != range.second; ++it) {
+        for (auto it = range.first; it != _rateToNGrams.end() && it != range.second; ++it) {
             out.push_back(it->second);
         }
         
@@ -374,7 +384,7 @@ private:
         _ngramsPerLevel = std::move(ngramCountPerLevel);
         _sentences = parseSentences(_allTokens);
         _maxCount = maxCount;
-        _countToNGrams = std::move(count2NGram);
+        _rateToNGrams = std::move(count2NGram);
         
         // calculate the probability of occurance
         for (auto& p : _db) {
@@ -399,14 +409,12 @@ private:
     std::vector<T> _allTokens;
     std::unordered_set<T> _vocab;
     std::vector<std::vector<T>> _sentences;
-    std::unordered_multimap<size_t, const NGram<T>*> _countToNGrams;
+    std::unordered_multimap<size_t, const NGram<T>*> _rateToNGrams;
     size_t _maxCount;
 
     double _unfoundProb;
     double _unfoundDepProb;
 
-
-    
     friend class DatabaseFactory;
 };
 
@@ -466,13 +474,20 @@ public:
     }
 
     template <typename T>
-    static typename Database<T>::ProbFunc good_turing(const double delta) {
-        return [&delta](const Database<std::string>& db,
-                        const NGram<std::string>& that,
-                        const size_t count) -> double {
-            return (count + delta) / (db.ngramCount(that.n()) + delta * std::pow(db.vocabulary().size(), that.n()));
+    static 
+    static typename Database<T>::ProbFunc good_turing(const size_t threshold) {
+        return [&threshold](const Database<std::string>& db,
+                            const NGram<std::string>& that,
+                            const size_t count) -> double {
+            if (count >= threshold) {
+                return NGramProbFunc::mle<T>(db, that, count);
+            }
+            
+            // count < threshold
+            return (count + 1) * db.countNGramsWithRate(count + 1) / (db.countNGramsWithRate(count) * db.vocabulary().size());
         };
     }
+    
 };
 
 /**
