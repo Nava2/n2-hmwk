@@ -61,8 +61,9 @@ int main(const int argc, const char** argv) {
 //     const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
 //         NGramProbFunc::delta_add<std::string>(input.lmparam), &NGramProbFunc::dependantProb<std::string>);
 
-    const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
-        &NGramProbFunc::good_turing, &NGramProbFunc::dependantProb<std::string>);
+    const auto gt_s1 = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
+        NGramProbFunc::good_turing::s1::fn<std::string>(), NGramProbFunc::good_turing::s1::fn<std::string>());
+    const auto model = NGramProbFunc::good_turing::s2::run(gt_s1, input.lmparam);
     
     vector<std::string> stokens;
     read_tokens(input.sentences, stokens, true);

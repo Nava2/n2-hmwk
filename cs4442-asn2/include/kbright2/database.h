@@ -9,6 +9,8 @@
 #include <functional>
 #include <memory>
 #include <cmath>
+#include <map>
+#include <algorithm>
 
 #include "ngram.h"
 #include "utils.h"
@@ -61,6 +63,10 @@ public:
 
     
     ~Database() noexcept { }
+
+    const Database<T> recalculate(ProbFunc probFn, DependantProbFunc depProbFn) const {
+        return Database<T>(_n, this->_db, probFn, depProbFn);
+    }
 
     const T nullValue() const; // dependant on spec
 
@@ -183,13 +189,43 @@ public:
         
         return out;
     }
+
+    const std::pair<std::vector<size_t>, std::vector<size_t>> rateToCountMapping() const {
+        std::map<size_t, size_t> buff;
+
+        for (const auto &p : _rateToNGrams) {
+            auto it = buff.find(p.first);
+            if (it == buff.end()) {
+                buff.insert({p.first, 1});
+            } else {
+                buff[p.first] += 1;
+            }
+        }
+
+        std::vector<std::pair<size_t, size_t> > vbuff(buff.begin(), buff.end());
+
+        std::sort(vbuff.begin(), vbuff.end(), [](const std::pair<size_t, size_t>& a,
+                  const std::pair<size_t, size_t>& b) {
+            return a.first < b.first;
+        });
+
+        std::vector<size_t> rs, ns;
+        rs.reserve(vbuff.size());    ns.reserve(vbuff.size());
+
+        for (const auto& p: vbuff) {
+            rs.push_back(p.first);
+            ns.push_back(p.second);
+        }
+
+        return {rs, ns};
+    }
     
     /**
      * Get the amount of NGrams with `rate` count. 
      * @param rate Rate to gather.
      * @return Number of NGrams with rate, `rate`.
      */
-    const size_t countNGramsWithRate(const size_t rate) {
+    const size_t countNGramsWithRate(const size_t rate) const {
         const auto range = _rateToNGrams.equal_range(rate);
         return std::distance(range.first, range.second);
     }
@@ -199,10 +235,10 @@ public:
      * @param count Amount to search for. 
      * @return vector of NGrams with count `count`. 
      */
-    const std::vector<const NGram<T>*> ngramsWithCount(const size_t count) {
+    const std::vector<const NGram<T>*> ngramsWithRate(const size_t rate) const {
         std::vector<const NGram<T>*> out;
         
-        const auto range = _rateToNGrams.equal_range(count);
+        const auto range = _rateToNGrams.equal_range(rate);
         out.reserve(std::distance(range.first, range.second));
         
         for (auto it = range.first; it != _rateToNGrams.end() && it != range.second; ++it) {
@@ -310,7 +346,7 @@ private:
         initPostDb(probFn, depProbFn);
     }
 
-    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>&& copy,
+    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>& copy,
              Database<T>::ProbFunc probFn,
              Database<T>::DependantProbFunc depProbFn)
         : _n(N),
@@ -429,8 +465,8 @@ const char Database<char>::nullValue() const {
 }
 
 
-class NGramProbFunc {
-public:
+namespace NGramProbFunc {
+
     template <typename T>
     static double simpleProbability(const Database<T>& db, const NGram<T>& that, // unused params
                                     size_t count) {
@@ -473,22 +509,55 @@ public:
         };
     }
 
-    template <typename T>
-    static 
-    static typename Database<T>::ProbFunc good_turing(const size_t threshold) {
-        return [&threshold](const Database<std::string>& db,
-                            const NGram<std::string>& that,
-                            const size_t count) -> double {
-            if (count >= threshold) {
-                return NGramProbFunc::mle<T>(db, that, count);
+    namespace good_turing {
+
+        namespace s1 {
+            template <typename T>
+            static typename Database<T>::ProbFunc fn() {
+                return [](const Database<std::string>&, const NGram<std::string>&, const size_t) -> double {
+                    return 0.0; // no-op
+                };
             }
-            
-            // count < threshold
-            return (count + 1) * db.countNGramsWithRate(count + 1) / (db.countNGramsWithRate(count) * db.vocabulary().size());
-        };
+        }
+
+        namespace s2 {
+
+        template <typename T>
+        static typename Database<T>::ProbFunc fn(const size_t threshold,
+                                                     std::function<double(const size_t)> powerFn) {
+            return [&threshold, powerFn](const Database<std::string>& db,
+                                const NGram<std::string>& that,
+                                const size_t count) -> double {
+                if (count >= threshold) {
+                    return NGramProbFunc::mle<T>(db, that, count);
+                }
+
+                // count < threshold
+                return (count + 1.0) * powerFn(count + 1) / (powerFn(count) * db.vocabulary().size());
+            };
+        }
+
+        template <typename T>
+        static typename Database<T>::ProbFunc depFn() {
+            return [](const Database<std::string>& db, const NGram<std::string>& that, const size_t) -> double {
+                return db.prob(that);
+            };
+        }
+
+        template <typename T>
+        static Database<T> run(const Database<T>& s1, const size_t threshold) {
+            // build vector<{ngram, count, freq
+            const auto xys = s1.rateToCountMapping();
+            const auto powerFn = fitToPowerLaw(xys.first, xys.second);
+
+            return s1.recalculate(fn<T>(threshold, powerFn), depFn<T>());
+        }
+
+        }
+
+
     }
-    
-};
+}
 
 /**
  * Build Database instances.
@@ -516,7 +585,7 @@ public:
     }
 
     template <typename U>
-    static Database<U> create(const size_t N, const std::unordered_map<std::vector<U>, std::size_t> &copy,
+    static Database<U> create(const size_t N, const std::unordered_map<NGram<U>, typename Database<U>::DataValue>& copy,
                               typename Database<U>::ProbFunc probFn = &NGramProbFunc::simpleProbability<U>,
                               typename Database<U>::DependantProbFunc depProbFn = &NGramProbFunc::mle<U>) {
         return Database<U>(N, copy, probFn, depProbFn);
