@@ -119,5 +119,17 @@ SET( P4_SRCS
 add_executable("P4" ${P4_HEADERS} ${P4_SRCS}
     ${LIB_HEADERS} ${LIB_SRCS}
     ${PROV_HEADERS} ${PROV_SRCS})
-    
+
+SET( P5_HEADERS
+    # "include/kbright2/p1/..."
+)
+
+SET( P5_SRCS
+    "src/kbright2/p5/p5.cpp"
+)
+
+add_executable("P5" ${P5_HEADERS} ${P5_SRCS}
+    ${LIB_HEADERS} ${LIB_SRCS}
+    ${PROV_HEADERS} ${PROV_SRCS})
+
 add_subdirectory(test)
