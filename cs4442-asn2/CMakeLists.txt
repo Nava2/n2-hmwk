@@ -60,6 +60,8 @@ add_executable("${PROJECT_NAME}-test" "test.cpp" ${PROV_HEADERS} ${PROV_SRCS})
 SET( LIB_HEADERS
     "include/kbright2/database.h"
     "include/kbright2/utils.h"
+    "include/kbright2/smoothing/good_turing.h"
+    "include/kbright2/smoothing/add_delta.h"
 )
 
 SET( LIB_SRCS

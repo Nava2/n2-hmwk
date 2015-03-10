@@ -10,6 +10,8 @@
 #include "fileRead.h"
 
 #include "kbright2/database.h"
+#include "kbright2/smoothing/good_turing.h"
+#include "kbright2/smoothing/add_delta.h"
 
 
 using namespace kbright2;
@@ -61,10 +63,13 @@ int main(const int argc, const char** argv) {
 //     const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
 //         NGramProbFunc::delta_add<std::string>(input.lmparam), &NGramProbFunc::dependantProb<std::string>);
 
-    const auto gt_s1 = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
-        NGramProbFunc::good_turing::s1::fn<std::string>(), NGramProbFunc::good_turing::s1::fn<std::string>());
-    const auto model = NGramProbFunc::good_turing::s2::run(gt_s1, input.lmparam);
-    
+    std::vector<std::string> tokens;
+    read_tokens(input.model, tokens, true);
+
+    const auto model = input.langModel == LangModel::GOOD_TURING
+            ? kbright2::good_turing::createModel<std::string>(input.n, tokens, input.lmparam)
+            : kbright2::add_delta::createModel<std::string>(input.n, tokens, input.lmparam);
+
     vector<std::string> stokens;
     read_tokens(input.sentences, stokens, true);
 

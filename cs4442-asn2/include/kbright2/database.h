@@ -65,7 +65,7 @@ public:
     ~Database() noexcept { }
 
     const Database<T> recalculate(ProbFunc probFn, DependantProbFunc depProbFn) const {
-        return Database<T>(_n, this->_db, probFn, depProbFn);
+        return Database<T>(_n, this->_db, this->_vocab, probFn, depProbFn);
     }
 
     const T nullValue() const; // dependant on spec
@@ -112,19 +112,22 @@ public:
     const double sentenceDepProb(const std::vector<T> &sentence) const {
         double out = 0.0;
 
+        if (sentence.size() == 1) {
+            return 0.0;
+        }
+
         std::unique_ptr<NGram<T>> prev = nullptr;
         // initialize the first N
         auto it = sentence.begin(); // be sure to ignore the <END>
         while (it != (sentence.end() - 1)) {
-            NGram<T> *n;
             if (prev) {
-                n = new NGram<T>(prev->asContext(*it));
+                prev = std::unique_ptr<NGram<T>>(new NGram<T>(prev->asContext(*it)));
             } else {
-                n = new NGram<T>({ *it });
+                prev = std::unique_ptr<NGram<T>>(new NGram<T>({ *it }));
             }
-            prev = std::unique_ptr<NGram<T>>(n);
 
-            out += std::log(this->depProb(*n));
+            out += std::log(this->depProb(*prev));
+            ++it;
         }
 
         return out;
@@ -191,19 +194,17 @@ public:
     }
 
     const std::pair<std::vector<size_t>, std::vector<size_t>> rateToCountMapping() const {
-        std::map<size_t, size_t> buff;
+        std::unordered_map<size_t, size_t> buff;
 
+        // use a map instead of a vector of pairs because we want lookup
         for (const auto &p : _rateToNGrams) {
-            auto it = buff.find(p.first);
-            if (it == buff.end()) {
-                buff.insert({p.first, 1});
-            } else {
-                buff[p.first] += 1;
-            }
+            buff[p.first] = p.second.size();
         }
 
+        // now convert to the vector of pairs
         std::vector<std::pair<size_t, size_t> > vbuff(buff.begin(), buff.end());
 
+        // sort on the 'first' or 'key' which is the rate
         std::sort(vbuff.begin(), vbuff.end(), [](const std::pair<size_t, size_t>& a,
                   const std::pair<size_t, size_t>& b) {
             return a.first < b.first;
@@ -238,13 +239,14 @@ public:
     const std::vector<const NGram<T>*> ngramsWithRate(const size_t rate) const {
         std::vector<const NGram<T>*> out;
         
-        const auto range = _rateToNGrams.equal_range(rate);
-        out.reserve(std::distance(range.first, range.second));
-        
-        for (auto it = range.first; it != _rateToNGrams.end() && it != range.second; ++it) {
-            out.push_back(it->second);
+        const auto it = _rateToNGrams.find(rate);
+        if (it == _rateToNGrams.end()) {
+            return out;
         }
-        
+
+        out.reserve(it->second.size());
+        out.insert(out.begin(), it->second.begin(), it->second.end());
+
         return out;
     }
 
@@ -321,14 +323,17 @@ public:
      */
     const Database<T> notIn(const Database<T> &other) const {
         std::unordered_map<NGram<T>, DataValue> out;
+        std::unordered_set<T> vocab;
 
         for (const auto& pair: _db) {
             if (other._db.count(pair.first) == 0) {
                 out[pair.first] = pair.second;
+                vocab.insert(pair.first.context().begin(), pair.first.context().end());
+                vocab.insert(pair.first.value());
             }
         }
 
-        return Database<T>(_n, std::move(out), _probFn, _depProbFn);
+        return Database<T>(_n, std::move(out), std::move(vocab), _probFn, _depProbFn);
     }
 
 private:
@@ -343,17 +348,33 @@ private:
           _depProbFn(depProbFn),
           _allTokens(tokens) {
         intialize();
-        initPostDb(probFn, depProbFn);
+        initPostDb();
     }
 
-    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>& copy,
+    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>&& copy,
+             const std::unordered_set<T>&& vocab,
              Database<T>::ProbFunc probFn,
              Database<T>::DependantProbFunc depProbFn)
         : _n(N),
           _probFn(probFn),
           _depProbFn(depProbFn),
-          _db(copy) {
-        initPostDb(probFn, depProbFn);
+          _db(copy),
+          _vocab(vocab) {
+
+
+        initPostDb();
+    }
+
+    Database(const std::size_t N, const std::unordered_map<NGram<T>, DataValue>& copy,
+             const std::unordered_set<T>& vocab,
+             Database<T>::ProbFunc probFn,
+             Database<T>::DependantProbFunc depProbFn)
+        : _n(N),
+          _probFn(probFn),
+          _depProbFn(depProbFn),
+          _db(copy),
+          _vocab(vocab) {
+        initPostDb();
     }
     
     Database<T> &operator=(const Database<T>& other) = delete;
@@ -395,7 +416,7 @@ private:
         _db = std::move(tdb);
     }
     
-    void initPostDb(typename Database<T>::ProbFunc probFn, typename Database<T>::DependantProbFunc depProbFn) {
+    void initPostDb() {
         size_t count = 0;
         auto maxCount = std::numeric_limits<std::size_t>::min();
         
@@ -403,7 +424,8 @@ private:
         ngrams.reserve(_db.size());
         std::vector<size_t> ngramCountPerLevel(_n + 1, 0);
         
-        std::unordered_multimap<size_t, const NGram<T>*> count2NGram;
+        std::unordered_map<size_t, std::vector<const NGram<T>*> > count2NGram;
+        count2NGram.reserve(_db.size());
                 
         for (const auto& p: _db) {
             count += p.second.count;
@@ -412,7 +434,13 @@ private:
             ngrams.push_back(&p.first);
             
             ngramCountPerLevel[p.first.n()] += p.second.count;
-            count2NGram.insert({ p.second.count, &p.first });
+
+            auto c2nit = count2NGram.find(p.second.count);
+            if (c2nit == count2NGram.end()) {
+                count2NGram[p.second.count] = std::vector<const NGram<T>*>();
+            }
+
+            count2NGram[p.second.count].push_back(&p.first);
         }
 
         ngrams.shrink_to_fit();
@@ -424,15 +452,15 @@ private:
         
         // calculate the probability of occurance
         for (auto& p : _db) {
-            p.second.prob = probFn(*this, p.first, p.second.count);
+            p.second.prob = _probFn(*this, p.first, p.second.count);
         }
-        _unfoundProb = probFn(*this, NGram<T>(this->nullValue()), 0);
+        _unfoundProb = _probFn(*this, NGram<T>(this->nullValue()), 0);
         
         // compute the dependant probabilities
         for (auto& p : _db) {
-            p.second.depProb = depProbFn(*this, p.first, p.second.count);
+            p.second.depProb = _depProbFn(*this, p.first, p.second.count);
         }
-        _unfoundDepProb = depProbFn(*this, NGram<T>(this->nullValue()), 0);
+        _unfoundDepProb = _depProbFn(*this, NGram<T>(this->nullValue()), 0);
     }
 
     const size_t _n;
@@ -445,7 +473,7 @@ private:
     std::vector<T> _allTokens;
     std::unordered_set<T> _vocab;
     std::vector<std::vector<T>> _sentences;
-    std::unordered_multimap<size_t, const NGram<T>*> _rateToNGrams;
+    std::unordered_map<size_t, std::vector<const NGram<T>*> > _rateToNGrams;
     size_t _maxCount;
 
     double _unfoundProb;
@@ -499,64 +527,6 @@ namespace NGramProbFunc {
 
          return prob;
      }
-
-    template <typename T>
-    static typename Database<T>::ProbFunc delta_add(const double delta) {
-        return [&delta](const Database<std::string>& db,
-                        const NGram<std::string>& that,
-                        const size_t count) -> double {
-            return (count + delta) / (db.ngramCount(that.n()) + delta * std::pow(db.vocabulary().size(), that.n()));
-        };
-    }
-
-    namespace good_turing {
-
-        namespace s1 {
-            template <typename T>
-            static typename Database<T>::ProbFunc fn() {
-                return [](const Database<std::string>&, const NGram<std::string>&, const size_t) -> double {
-                    return 0.0; // no-op
-                };
-            }
-        }
-
-        namespace s2 {
-
-        template <typename T>
-        static typename Database<T>::ProbFunc fn(const size_t threshold,
-                                                     std::function<double(const size_t)> powerFn) {
-            return [&threshold, powerFn](const Database<std::string>& db,
-                                const NGram<std::string>& that,
-                                const size_t count) -> double {
-                if (count >= threshold) {
-                    return NGramProbFunc::mle<T>(db, that, count);
-                }
-
-                // count < threshold
-                return (count + 1.0) * powerFn(count + 1) / (powerFn(count) * db.vocabulary().size());
-            };
-        }
-
-        template <typename T>
-        static typename Database<T>::ProbFunc depFn() {
-            return [](const Database<std::string>& db, const NGram<std::string>& that, const size_t) -> double {
-                return db.prob(that);
-            };
-        }
-
-        template <typename T>
-        static Database<T> run(const Database<T>& s1, const size_t threshold) {
-            // build vector<{ngram, count, freq
-            const auto xys = s1.rateToCountMapping();
-            const auto powerFn = fitToPowerLaw(xys.first, xys.second);
-
-            return s1.recalculate(fn<T>(threshold, powerFn), depFn<T>());
-        }
-
-        }
-
-
-    }
 }
 
 /**
