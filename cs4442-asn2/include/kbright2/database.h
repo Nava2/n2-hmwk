@@ -493,7 +493,7 @@ const double Database<std::string>::sentenceDepProb(const std::vector<std::strin
     double out = 0.0;
 
     // be sure to ignore the <END> if its there
-    const auto endIt = sentence.end() - (*(sentence.end()) == EOS_TERM ? 1 : 0);
+    const auto endIt = sentence.end() - (*(sentence.end() - 1) == EOS_TERM ? 1 : 0);
 
     std::unique_ptr<NGram<std::string>> prev = nullptr;
 

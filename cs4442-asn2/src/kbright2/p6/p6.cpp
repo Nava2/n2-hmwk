@@ -26,20 +26,24 @@ enum class LangModel: size_t {
  * @brief The CLIInput struct holds information parsed from the command line
  */
 typedef struct _CLIInput {
-    const std::string model;
-    const std::string sentences;
+    const std::string train;
+    const std::string check;
+    const std::string dictionary;
     const size_t n;
-    const double lmparam;
+    const size_t t;
+    const double delta;
     const LangModel langModel;
 } CLIInput;
 
 std::ostream& operator<<(std::ostream& os, const CLIInput& obj)
 {
     // write obj to stream
-    os << "CLIInput{model=" << obj.model
-       << ", sentences=" << obj.sentences
+    os << "CLIInput{train=" << obj.train
+       << ", check=" << obj.check
+       << ", dictionary=" << obj.dictionary
        << ", langModel=" << (obj.langModel == LangModel::GOOD_TURING ? "Good-Turing" : "Add-Delta")
-       << ", lmparam=" << std::setprecision(5) << obj.lmparam
+       << ", delta=" << std::setprecision(5) << obj.delta
+       << ", t=" << obj.t
        << ", n=" << obj.n << "}";
 
     return os;
@@ -47,35 +51,70 @@ std::ostream& operator<<(std::ostream& os, const CLIInput& obj)
 
 int main(const int argc, const char** argv) {
 
-    if (argc != 6) {
+    if (argc != 8) {
         std::cerr << "Invalid arguments passed. " << std::endl;
-        std::cerr << "Usage: P4 <text:path> <sentences:path> <nGramCount:int> <language-param:float> <language-model:0|1>" << std::endl;
+        std::cerr << "Usage: P6 <trainText:path> <checkText:path> <dictionary:path> <nGramCount:int> <threshold:size_t> <delta:float> <language-model:0|1>" << std::endl;
 
         return 1;
     }
 
     srand(7777);
 
-    const CLIInput input = { argv[1], argv[2], std::stoul(argv[3]), std::stod(argv[4]), LangModel(std::stoul(argv[5])) };
+    const CLIInput input = { argv[1], argv[2], argv[3],
+                             std::stoul(argv[4]),  // n
+                             std::stoul(argv[5]),  // t
+                             std::stod(argv[6]),   // delta
+                             LangModel(std::stoul(argv[7])) };
 
     std::cout << input << std::endl;
 
-//     const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
-//         NGramProbFunc::delta_add<std::string>(input.lmparam), &NGramProbFunc::dependantProb<std::string>);
+    std::vector<std::string> trainTokens;
+    read_tokens(input.train, trainTokens, true);
 
-    std::vector<std::string> tokens;
-    read_tokens(input.model, tokens, true);
+    const auto trainModel = input.langModel == LangModel::GOOD_TURING
+            ? kbright2::good_turing::createModel<std::string>(input.n, trainTokens, input.t)
+            : kbright2::add_delta::createModel<std::string>(input.n, trainTokens, input.delta);
 
-    const auto model = input.langModel == LangModel::GOOD_TURING
-            ? kbright2::good_turing::createModel<std::string>(input.n, tokens, input.lmparam)
-            : kbright2::add_delta::createModel<std::string>(input.n, tokens, input.lmparam);
+    std::vector<std::string> dictWords;
+    read_tokens(input.dictionary, dictWords, false);
+    dictWords.shrink_to_fit();
 
-    vector<std::string> stokens;
-    read_tokens(input.sentences, stokens, true);
+    std::vector<std::string> checkTokens;
+    read_tokens(input.check, checkTokens, true);
 
-    const auto sentences = parseSentences(stokens);
-    for (const auto& sentence: sentences) {
-        cout << setprecision(5) << model.sentenceDepProb(sentence) << endl;
+    const std::vector<std::vector<std::string> > checkSentences = kbright2::parseSentences(checkTokens);
+
+    std::vector<std::vector<std::string> > likelySentences;
+    likelySentences.reserve(checkSentences.size());
+
+    for (const auto& check: checkSentences) {
+
+        auto best = check;
+        double bprob = trainModel.sentenceDepProb(check);
+
+        for (size_t i = 0; i < check.size(); ++i) {
+            std::vector<std::string> buff(check.begin(), check.end());
+
+            const auto w2check = kbright2::getLikelyWords(dictWords, buff[i]);
+            for (const auto& w2 : w2check) {
+                buff[i] = w2;
+
+                const double prob = trainModel.sentenceDepProb(buff);
+                if (prob > bprob) {
+                    best = buff;
+                    bprob = prob;
+                }
+            }
+        }
+
+        likelySentences.push_back(best);
+    }
+
+    for (const auto& s: likelySentences) {
+        for (const auto& w: s) {
+            cout << w << " ";
+        }
+        cout << endl;
     }
 
     return 0;

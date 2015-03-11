@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "fileRead.h"
+#include "utilsToStudents.h"
 
 namespace kbright2 {
  
@@ -128,6 +129,27 @@ std::function<const double(const size_t)> fitToPowerLaw(const std::vector<size_t
         return (1.0 / total) * inner(r);
     };
 
+}
+
+/**
+ * @brief getLikelyWords Uses Levenshtein distance to find words that the current word may be a misspelling of.
+ * @param dictionary Correct words to check against
+ * @param word Possibly incorrect word.
+ * @return vector of words that have Levenshtein distance of 1.
+ */
+const std::vector<std::string> getLikelyWords(const std::vector<std::string>& dictionary, const std::string& word) {
+    std::vector<std::string> out;
+    out.reserve(dictionary.size() * 0.10);
+
+    for (const auto& dw: dictionary) {
+        if (uiLevenshteinDistance(word, dw) == 1) {
+            out.push_back(dw);
+        }
+    }
+
+    out.shrink_to_fit();
+
+    return out;
 }
 
     

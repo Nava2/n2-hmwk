@@ -1,3 +1,6 @@
+#ifndef __utilsToStudents_H
+#define __utilsToStudents_H
+
 #include <vector>
 #include <stdio.h>
 
@@ -80,4 +83,6 @@ size_t uiLevenshteinDistance(const std::string &s1, const std::string &s2)
  
   return result;
 }
+
+#endif // #ifndef __utilsToStudents_H
  
