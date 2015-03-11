@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iomanip>
 #include <memory>
+#include <array>
 
 #include "utilsToStudents.h"
 #include "fileRead.h"
@@ -26,9 +27,9 @@ enum class LangModel: size_t {
  * @brief The CLIInput struct holds information parsed from the command line
  */
 typedef struct {
-    const size_t senLength;
-    const size_t n;
     const double delta;
+    const size_t n;
+    const size_t senLength;
 } CLIInput;
 
 std::ostream& operator<<(std::ostream& os, const CLIInput& obj)
@@ -41,6 +42,11 @@ std::ostream& operator<<(std::ostream& os, const CLIInput& obj)
     return os;
 }
 
+const std::array<std::string, 6> LANGS{ {"english", "french", "danish", "italian", "latin", "sweedish"} };
+
+const bool READ_LATIN_ONLY = false;
+
+
 int main(const int argc, const char** argv) {
 
     if (argc != 4) {
@@ -52,21 +58,76 @@ int main(const int argc, const char** argv) {
 
     srand(7777);
 
-    const CLIInput input = { std::stoul(argv[1]), std::stoul(argv[2]), std::stod(argv[3]) };
+    const CLIInput input = { std::stod(argv[2]), std::stoul(argv[1]), std::stoul(argv[3]) };
 
     std::cout << input << std::endl;
 
+    std::vector<Database<char> > trainModels;
+    trainModels.reserve(LANGS.size());
 
-    std::vector<char> tokens;
-    read_tokens("test.txt", tokens, false);
-    tokens.shrink_to_fit();
+    std::vector<std::vector<char>> langTokens;
+    langTokens.reserve(LANGS.size());
 
-    std::vector<std::vector<char> > sentences;
-    sentences.reserve(tokens.size() / input.senLength + 1);
+    std::vector<std::vector<std::vector<char> > > langSentences;
+    langSentences.reserve(LANGS.size());
 
-//    cout << std::distance(tokens.begin(), tokens.end()) << " wat" << endl;
-    for (auto cit = tokens.begin(); cit != tokens.end() && (std::distance(cit, tokens.end()) > input.senLength) ; cit += input.senLength) {
-        sentences.push_back(std::vector<char>(cit, cit + input.senLength));
+    for (const auto& lang : LANGS) {
+        std::vector<char> tokens;
+        read_tokens(lang + "1.txt", tokens, READ_LATIN_ONLY);
+        tokens.shrink_to_fit();
+        langTokens.push_back(tokens);
+
+        tokens.clear();
+        read_tokens(lang + "2.txt", tokens, READ_LATIN_ONLY);
+        tokens.shrink_to_fit();
+        langSentences.push_back(kbright2::parseSentences(tokens, input.senLength));
+
+        trainModels.push_back(kbright2::add_delta::createModel(input.n, tokens, input.delta));
+    }
+
+    std::array<std::array<size_t, LANGS.size()>, LANGS.size()> conf;
+    for (auto &a: conf) {
+        for (auto &b: a)
+            b = 0;
+    }
+
+    for (size_t i = 0; i < LANGS.size(); ++i) {
+        for (const auto s : langSentences[i]) {
+            size_t bestj = 0;
+            double best = std::numeric_limits<double>::lowest();
+            for (size_t j = 0; j < LANGS.size(); ++j) {
+                const auto& model = trainModels[j];
+                const double prob = model.sentenceDepProb(s);
+
+                if (prob > best) {
+                    best = prob;
+                    bestj = j;
+                }
+            }
+
+            conf[i][bestj] += 1;
+        }
+    }
+
+    size_t total = 0;
+    size_t bad = 0;
+    for (size_t i = 0; i < LANGS.size(); ++i) {
+        for (size_t j = 0; j < LANGS.size(); ++j) {
+            const auto v = conf[i][j];
+            total += v;
+            if (i != j) {
+                bad += v;
+            }
+        }
+    }
+
+    cout << setprecision(4) << (100.0 * bad) / total << endl;
+
+    for (auto& a: conf) {
+        for (auto& v: a) {
+            cout << setw(5) << v << ' ';
+        }
+        cout << endl;
     }
 
     return 0;

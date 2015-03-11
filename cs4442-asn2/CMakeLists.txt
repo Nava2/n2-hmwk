@@ -128,6 +128,14 @@ SET( P5_SRCS
     "src/kbright2/p5/p5.cpp"
 )
 
+SET( P6_HEADERS
+    # "include/kbright2/p1/..."
+)
+
+SET( P6_SRCS
+    "src/kbright2/p6/p6.cpp"
+)
+
 add_executable("P5" ${P5_HEADERS} ${P5_SRCS}
     ${LIB_HEADERS} ${LIB_SRCS}
     ${PROV_HEADERS} ${PROV_SRCS})

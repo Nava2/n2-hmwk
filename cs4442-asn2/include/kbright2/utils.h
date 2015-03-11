@@ -12,15 +12,15 @@ namespace kbright2 {
  
 /**
  * Reads sentences looking for the "<END>" token.
- * @param tokens Tokens to parse through. 
+ * @param tokens Tokens to parse through.
  * @return unordered_set of sentences including "<END>"
  */
 std::vector<std::vector<std::string> > parseSentences(const std::vector<std::string> &tokens) {
     using namespace std;
-    
+
     vector<vector<std::string>> sentences;
     vector<std::string> sentence;
-    
+
     for (const auto& token: tokens) {
         sentence.push_back(token);
         if (token == "<END>") {
@@ -28,7 +28,26 @@ std::vector<std::vector<std::string> > parseSentences(const std::vector<std::str
             sentence.clear();
         }
     }
-    
+
+    return sentences;
+}
+
+/**
+ * Reads sentences looking for the "<END>" token.
+ * @param tokens Tokens to parse through.
+ * @return unordered_set of sentences including "<END>"
+ */
+std::vector<std::vector<char> > parseSentences(const std::vector<char> &tokens, const size_t len) {
+    std::vector<std::vector<char> > sentences;
+    sentences.reserve(tokens.size() / len + 1);
+
+//    cout << std::distance(tokens.begin(), tokens.end()) << " wat" << endl;
+    for (auto cit = tokens.begin(); cit != tokens.end() && (std::distance(cit, tokens.end()) > len) ; cit += len) {
+        sentences.push_back(std::vector<char>(cit, cit + len));
+    }
+
+    sentences.shrink_to_fit();
+
     return sentences;
 }
 

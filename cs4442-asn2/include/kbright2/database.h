@@ -45,9 +45,19 @@ public:
           _db(std::move(other._db)),
           _ngrams(std::move(other._ngrams)),
           _ngramsPerLevel(std::move(other._ngramsPerLevel)),
-          _allTokens(std::move(other._allTokens)), 
+          _allTokens(std::move(other._allTokens)),
           _maxCount(other._maxCount) {
-        
+
+    }
+
+    Database(const Database<T>& other)
+        : _n(other._n),
+          _db(other._db),
+          _ngrams(other._ngrams),
+          _ngramsPerLevel(other._ngramsPerLevel),
+          _allTokens(other._allTokens),
+          _maxCount(other._maxCount) {
+
     }
         
     Database<T> &operator=(const Database<T>&& other) {
@@ -109,32 +119,10 @@ public:
         }
     }
 
-    const double sentenceDepProb(const std::vector<T> &sentence) const {
-        double out = 0.0;
-
-        if (sentence.size() == 1) {
-            return 0.0;
-        }
-
-        std::unique_ptr<NGram<T>> prev = nullptr;
-        // initialize the first N
-        auto it = sentence.begin(); // be sure to ignore the <END>
-        while (it != (sentence.end() - 1)) {
-            if (prev) {
-                prev = std::unique_ptr<NGram<T>>(new NGram<T>(prev->asContext(*it)));
-            } else {
-                prev = std::unique_ptr<NGram<T>>(new NGram<T>({ *it }));
-            }
-
-            out += std::log(this->depProb(*prev));
-            ++it;
-        }
-
-        return out;
-    }
+    const double sentenceDepProb(const std::vector<T> &sentence) const;
     
     const std::vector<double> getNProbs(const std::vector<const NGram<T>* >& pngrams) const noexcept {
-        std::vector<NGram<std::string> > ngrams;
+        std::vector<NGram<T> > ngrams;
         ngrams.reserve(pngrams.size());
         
         for (const auto& p: pngrams) {
@@ -254,9 +242,7 @@ public:
         return _allTokens;
     }
     
-    const std::vector<NGram<T> >& sentences() const noexcept {
-        return _sentences;
-    }
+    const std::vector<std::vector<T> > sentences(const size_t len = -1) const;
 
     const std::size_t n() const noexcept {
         return _n;
@@ -337,10 +323,8 @@ public:
     }
 
 private:
-    
 
-
-    Database(const std::size_t N, const std::vector<std::string>& tokens,
+    Database(const std::size_t N, const std::vector<T>& tokens,
              Database<T>::ProbFunc probFn,
              Database<T>::DependantProbFunc depProbFn)
         : _n(N),
@@ -446,7 +430,6 @@ private:
         ngrams.shrink_to_fit();
         _ngrams = std::move(ngrams);
         _ngramsPerLevel = std::move(ngramCountPerLevel);
-        _sentences = parseSentences(_allTokens);
         _maxCount = maxCount;
         _rateToNGrams = std::move(count2NGram);
         
@@ -472,7 +455,6 @@ private:
     std::vector<size_t> _ngramsPerLevel;
     std::vector<T> _allTokens;
     std::unordered_set<T> _vocab;
-    std::vector<std::vector<T>> _sentences;
     std::unordered_map<size_t, std::vector<const NGram<T>*> > _rateToNGrams;
     size_t _maxCount;
 
@@ -490,6 +472,69 @@ const std::string Database<std::string>::nullValue() const {
 template <>
 const char Database<char>::nullValue() const {
     return '\0';
+}
+
+template <>
+const std::vector<std::vector<std::string> > Database<std::string>::sentences(const size_t) const {
+    return parseSentences(_allTokens);
+}
+
+template <>
+const std::vector<std::vector<char> > Database<char>::sentences(const size_t len) const {
+    return parseSentences(_allTokens, len);
+}
+
+template <>
+const double Database<std::string>::sentenceDepProb(const std::vector<std::string> &sentence) const {
+    if (sentence.size() == 0)  {
+        return 0.0;
+    }
+
+    double out = 0.0;
+
+    // be sure to ignore the <END> if its there
+    const auto endIt = sentence.end() - (*(sentence.end()) == EOS_TERM ? 1 : 0);
+
+    std::unique_ptr<NGram<std::string>> prev = nullptr;
+
+    auto it = sentence.begin();
+    while (it != endIt) {
+        if (prev) {
+            prev = std::unique_ptr<NGram<std::string>>(new NGram<std::string>(prev->asContext(*it)));
+        } else {
+            prev = std::unique_ptr<NGram<std::string>>(new NGram<std::string>({ *it }));
+        }
+
+        out += std::log(this->depProb(*prev));
+        ++it;
+    }
+
+    return out;
+}
+
+template <>
+const double Database<char>::sentenceDepProb(const std::vector<char> &sentence) const {
+    if (sentence.size() == 0)  {
+        return 0.0;
+    }
+
+    double out = 0.0;
+
+    std::unique_ptr<NGram<char>> prev = nullptr;
+
+    auto it = sentence.begin();
+    while (it != sentence.end()) {
+        if (prev) {
+            prev = std::unique_ptr<NGram<char>>(new NGram<char>(prev->asContext(*it)));
+        } else {
+            prev = std::unique_ptr<NGram<char>>(new NGram<char>({ *it }));
+        }
+
+        out += std::log(this->depProb(*prev));
+        ++it;
+    }
+
+    return out;
 }
 
 
