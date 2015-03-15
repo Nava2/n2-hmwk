@@ -238,12 +238,25 @@ public:
         return out;
     }
 
-    const NGram<T>& tokens() const noexcept {
+    /**
+     * Get all the tokens for a database, this is not a unique set.
+     * @return vector of tokens. 
+     */
+    const std::vector<T>& tokens() const noexcept {
         return _allTokens;
     }
     
+    /**
+     * Gets all of the sentences of the current database. If the model is a `char` model, the @param len parameter is 
+     * required to extract the size of the sentence vectors. 
+     * @return Sentences of the database. 
+     */
     const std::vector<std::vector<T> > sentences(const size_t len = -1) const;
 
+    /**
+     * Return the N value used to construct this database.
+     * @return N
+     */
     const std::size_t n() const noexcept {
         return _n;
     }
@@ -292,14 +305,21 @@ public:
      */
     const Database<T> intersect(const Database<T> &other) const {
         std::unordered_map<NGram<T>, DataValue> out;
+        std::unordered_set<T> vocab;
 
-        for (const auto &pair: other._db) {
+        DataValue dv;
+        for (const auto& pair: other._db) {
             if (_db.count(pair.first) >= 1) {
-                out[pair.first] = { pair.second.count + _db[pair.first].count, 0.0, 0.0 };
+                dv = pair.second;
+                dv.count += _db.find(pair.first)->second.count;
+                out[pair.first] = dv;
+                
+                vocab.insert(pair.first.context().begin(), pair.first.context().end());
+                vocab.insert(pair.first.value());
             }
         }
 
-        return Database<T>(_n, std::move(out));
+        return Database<T>(_n, std::move(out), std::move(vocab), _probFn, _depProbFn);
     }
 
     /**

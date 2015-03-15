@@ -4,6 +4,7 @@
 #include <vector>
 #include <assert.h>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <string>
 #include <math.h>
@@ -90,6 +91,16 @@ public:
         }
 
         return NGram<T>(value, context);
+    }
+    
+    const std::string toString() const {
+        std::stringstream ss;
+        for (const auto& v: _context) {
+            ss << v << ' ';
+        }
+        ss << _val;
+        
+        return ss.str();
     }
     
     static 

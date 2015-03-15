@@ -25,14 +25,15 @@ const std::pair<std::size_t, double> computeDifference(const Database<T>& first,
                                                        const size_t n, 
                                                        const bool print) {
 
-    const auto inter = second.notIn(first);
+    const auto notIn = second.notIn(first);
 
-    const std::pair<std::size_t, double> out(inter.ngramCount(n), 1.0 * inter.ngramCount(n) / second.ngramCount(n));
+    const std::pair<std::size_t, double> out(notIn.ngramCount(n), 1.0 * notIn.ngramCount(n) / second.ngramCount(n));
 
-    std::cout << std::setprecision(3) << out.second << std::endl;
+    std::cout << std::setprecision(3) << (100.0 * out.second) << std::endl;
     if (print) {
+        const auto inter = first.intersect(second);
         for (const auto& ngram: inter.ngrams(n)) {
-            std::cout << ngram << std::endl;
+            std::cout << ngram->toString() << std::endl;
         }
     }
 
@@ -72,7 +73,7 @@ int main(const int argc, const char** argv) {
 
     const CLIInput input = { argv[1], argv[2], std::stoul(argv[3]), std::stoul(argv[4]) > 0 };
 
-    std::cout << input << std::endl;
+//     std::cout << input << std::endl;
 
     const auto first = DatabaseFactory::createFromFile<std::string>(input.n, input.first), 
             second = DatabaseFactory::createFromFile<std::string>(input.n, input.second);

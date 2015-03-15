@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <cmath>
+#include <assert.h>
 
 #include "fileRead.h"
 #include "utilsToStudents.h"
@@ -43,7 +45,7 @@ std::vector<std::vector<char> > parseSentences(const std::vector<char> &tokens, 
     sentences.reserve(tokens.size() / len + 1);
 
 //    cout << std::distance(tokens.begin(), tokens.end()) << " wat" << endl;
-    for (auto cit = tokens.begin(); cit != tokens.end() && (std::distance(cit, tokens.end()) > len) ; cit += len) {
+    for (auto cit = tokens.begin(); cit != tokens.end() && (std::distance(cit, tokens.end()) > int(len)) ; cit += len) {
         sentences.push_back(std::vector<char>(cit, cit + len));
     }
 
@@ -106,7 +108,7 @@ std::function<const double(const size_t)> fitToPowerLaw(const std::vector<size_t
     }
 
     double slnx = 0.0, slny = 0.0, slnxlny = 0.0, slnx2 = 0.0, slny2 = 0.0;
-    for (int i = 0; i < lnx.size(); ++i) {
+    for (size_t i = 0; i < lnx.size(); ++i) {
         slnx    += lnx[i];      slny  += lny[i];
         slnx2   += lnx2[i];     slny2 += lny2[i];
         slnxlny += lnxlny[i];

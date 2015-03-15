@@ -85,11 +85,7 @@ int main(const int argc, const char** argv) {
         trainModels.push_back(kbright2::add_delta::createModel(input.n, tokens, input.delta));
     }
 
-    std::array<std::array<size_t, LANGS.size()>, LANGS.size()> conf;
-    for (auto &a: conf) {
-        for (auto &b: a)
-            b = 0;
-    }
+    std::vector<std::vector<size_t> > conf(LANGS.size(), std::vector<size_t>(LANGS.size(), 0));
 
     for (size_t i = 0; i < LANGS.size(); ++i) {
         for (const auto s : langSentences[i]) {
@@ -124,7 +120,7 @@ int main(const int argc, const char** argv) {
     cout << setprecision(4) << (100.0 * bad) / total << endl;
 
     for (auto& a: conf) {
-        for (auto& v: a) {
+        for (auto v: a) {
             cout << setw(5) << v << ' ';
         }
         cout << endl;
