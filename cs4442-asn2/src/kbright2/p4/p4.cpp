@@ -60,9 +60,6 @@ int main(const int argc, const char** argv) {
 
     std::cout << input << std::endl;
 
-//     const auto model = DatabaseFactory::createFromFile<std::string>(input.n, input.model, true,
-//         NGramProbFunc::delta_add<std::string>(input.lmparam), &NGramProbFunc::dependantProb<std::string>);
-
     std::vector<std::string> tokens;
     read_tokens(input.model, tokens, true);
 

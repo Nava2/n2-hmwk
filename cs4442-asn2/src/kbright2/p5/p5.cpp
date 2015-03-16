@@ -60,7 +60,7 @@ int main(const int argc, const char** argv) {
 
     const CLIInput input = { std::stod(argv[2]), std::stoul(argv[1]), std::stoul(argv[3]) };
 
-    std::cout << input << std::endl;
+//     std::cout << input << std::endl;
 
     std::vector<Database<char> > trainModels;
     trainModels.reserve(LANGS.size());
@@ -76,13 +76,12 @@ int main(const int argc, const char** argv) {
         read_tokens(lang + "1.txt", tokens, READ_LATIN_ONLY);
         tokens.shrink_to_fit();
         langTokens.push_back(tokens);
+        trainModels.push_back(kbright2::add_delta::createModel(input.n, tokens, input.delta));
 
         tokens.clear();
         read_tokens(lang + "2.txt", tokens, READ_LATIN_ONLY);
         tokens.shrink_to_fit();
         langSentences.push_back(kbright2::parseSentences(tokens, input.senLength));
-
-        trainModels.push_back(kbright2::add_delta::createModel(input.n, tokens, input.delta));
     }
 
     std::vector<std::vector<size_t> > conf(LANGS.size(), std::vector<size_t>(LANGS.size(), 0));
@@ -119,12 +118,12 @@ int main(const int argc, const char** argv) {
 
     cout << setprecision(4) << (100.0 * bad) / total << endl;
 
-    for (auto& a: conf) {
-        for (auto v: a) {
-            cout << setw(5) << v << ' ';
-        }
-        cout << endl;
-    }
+//     for (auto& a: conf) {
+//         for (auto v: a) {
+//             cout << setw(5) << v << ' ';
+//         }
+//         cout << endl;
+//     }
 
     return 0;
 }

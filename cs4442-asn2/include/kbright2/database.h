@@ -23,6 +23,17 @@ static const std::string EOS_TERM = "<END>";
     
 class DatabaseFactory; // forward
 
+/**
+ * @brief The Database class is an overarching collection of `NGram<T>` instances with useful methods to compute NLP 
+ * calculations.
+ * 
+ * Building of Database instances is done via the DatabaseFactory class and all instances that exist should be `const`
+ * and internally immutable. This was done intentionally to stop accidental copying of memory under performance 
+ * concerns with datasets of large `N` values. Upon construction, probabilities are computed via lamda expressions or 
+ * function pointers and stored for later usage. 
+ * 
+ * <strong>Note:</strong> This class is only valud for <code>T = char</code> or <code>T = std::string</code>. 
+ */
 template <typename T>
 class Database {
 
@@ -46,7 +57,9 @@ public:
           _ngrams(std::move(other._ngrams)),
           _ngramsPerLevel(std::move(other._ngramsPerLevel)),
           _allTokens(std::move(other._allTokens)),
-          _maxCount(other._maxCount) {
+          _maxCount(other._maxCount), 
+          _unfoundProb(other._unfoundProb),
+          _unfoundDepProb(other._unfoundDepProb) {
 
     }
 
@@ -56,7 +69,9 @@ public:
           _ngrams(other._ngrams),
           _ngramsPerLevel(other._ngramsPerLevel),
           _allTokens(other._allTokens),
-          _maxCount(other._maxCount) {
+          _maxCount(other._maxCount),
+          _unfoundProb(other._unfoundProb),
+          _unfoundDepProb(other._unfoundDepProb)  {
 
     }
         
@@ -67,6 +82,8 @@ public:
         this->_ngrams = std::move(other._ngrams);
         this->_ngramsPerLevel = std::move(other._ngramsPerLevel);
         this->_maxCount = other._maxCount;
+        this->_unfoundProb = other._unfoundProb;
+        this->_unfoundDepProb = other._unfoundDepProb;
         
         return *this;
     }
@@ -465,6 +482,32 @@ private:
         }
         _unfoundDepProb = _depProbFn(*this, NGram<T>(this->nullValue()), 0);
     }
+    
+    template <typename Iter>
+    const double __sentenceDepProb(Iter senStart, const Iter senEnd) const {
+        const int dist = std::distance(senStart, senEnd);
+        if (dist <= 0)  {
+            return 0.0;
+        }
+
+        double out = 0.0;
+        
+        auto it = senStart;
+        NGram<T> prev{ *it };
+        out += std::log(this->depProb(prev));
+        
+        for (size_t i = 1; i < std::min(this->n(), size_t(dist - 1)); ++i) {
+            prev = prev.asContext(*(++it), i+1);
+            out += std::log(this->depProb(prev));
+        }
+        
+        do {
+            prev = prev.asContext(*(++it));
+            out += std::log(this->depProb(prev));
+        } while (it != (senEnd - 1));
+
+        return out;
+    }
 
     const size_t _n;
     const ProbFunc _probFn;
@@ -506,55 +549,14 @@ const std::vector<std::vector<char> > Database<char>::sentences(const size_t len
 
 template <>
 const double Database<std::string>::sentenceDepProb(const std::vector<std::string> &sentence) const {
-    if (sentence.size() == 0)  {
-        return 0.0;
-    }
-
-    double out = 0.0;
-
     // be sure to ignore the <END> if its there
     const auto endIt = sentence.end() - (*(sentence.end() - 1) == EOS_TERM ? 1 : 0);
-
-    std::unique_ptr<NGram<std::string>> prev = nullptr;
-
-    auto it = sentence.begin();
-    while (it != endIt) {
-        if (prev) {
-            prev = std::unique_ptr<NGram<std::string>>(new NGram<std::string>(prev->asContext(*it)));
-        } else {
-            prev = std::unique_ptr<NGram<std::string>>(new NGram<std::string>({ *it }));
-        }
-
-        out += std::log(this->depProb(*prev));
-        ++it;
-    }
-
-    return out;
+    return __sentenceDepProb(sentence.begin(), endIt);
 }
 
 template <>
 const double Database<char>::sentenceDepProb(const std::vector<char> &sentence) const {
-    if (sentence.size() == 0)  {
-        return 0.0;
-    }
-
-    double out = 0.0;
-
-    std::unique_ptr<NGram<char>> prev = nullptr;
-
-    auto it = sentence.begin();
-    while (it != sentence.end()) {
-        if (prev) {
-            prev = std::unique_ptr<NGram<char>>(new NGram<char>(prev->asContext(*it)));
-        } else {
-            prev = std::unique_ptr<NGram<char>>(new NGram<char>({ *it }));
-        }
-
-        out += std::log(this->depProb(*prev));
-        ++it;
-    }
-
-    return out;
+    return __sentenceDepProb(sentence.begin(), sentence.end());
 }
 
 

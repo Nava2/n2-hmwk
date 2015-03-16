@@ -64,7 +64,7 @@ SCENARIO( "Create NGrams", "[kbright2::NGram]" ) {
         
         std::unique_ptr<NGram<string>> ng;
         std::unique_ptr<NGram<string>> ctx;
-        size_t newN;
+        size_t newN = 0;
         
         GIVEN( "unigram") {
             ng = NGRAM_PTR({"v"});

@@ -21,7 +21,7 @@ template <typename T>
 static
 const Database<T> createModel(const size_t N, const std::vector<T>& tokens, const double delta) {
     return DatabaseFactory::createFromTokens<T>(N, tokens, fn<T>(delta),
-                                                        &NGramProbFunc::dependantProb<T>);
+                                                &NGramProbFunc::dependantProb<T>);
 }
 
 } // end namespace add_delta

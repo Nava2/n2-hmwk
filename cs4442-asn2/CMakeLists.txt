@@ -35,7 +35,7 @@ SET( PROV_SRCS
 )
 
 # Test code
-add_executable("${PROJECT_NAME}-test" "test.cpp" ${PROV_HEADERS} ${PROV_SRCS})
+# add_executable("${PROJECT_NAME}-test" "test.cpp" ${PROV_HEADERS} ${PROV_SRCS})
 
 SET( LIB_HEADERS
     "include/kbright2/database.h"

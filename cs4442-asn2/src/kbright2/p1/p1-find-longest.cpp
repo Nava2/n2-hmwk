@@ -62,7 +62,7 @@ int main(const int argc, const char** argv) {
         }
     }
 
-    std::cout << "N = " << n << std::endl;
+    std::cout << "N = " << (n + 1) << std::endl;
     for (const auto& ngram: largestNgrams) {
         std::cout << ngram->toString() << std::endl;
     }

@@ -66,12 +66,14 @@ int main(const int argc, const char** argv) {
 
     if (argc != 5) {
         std::cerr << "Invalid arguments passed. " << std::endl;
-        std::cerr << "Usage: P1 <firstInputText:string> <secondInputText:string> <nGramCount:int> <print:bool>" << std::endl;
+        std::cerr << "Usage: P1 <firstInputText:string> <secondInputText:string> "
+                  << "<nGramCount:int> <print:bool>" << std::endl;
 
         return 1;
     }
 
-    const CLIInput input = { argv[1], argv[2], std::stoul(argv[3]), std::stoul(argv[4]) > 0 };
+    const CLIInput input = { argv[1], argv[2], std::stoul(argv[3]), 
+        std::stoul(argv[4]) > 0 };
 
 //     std::cout << input << std::endl;
 

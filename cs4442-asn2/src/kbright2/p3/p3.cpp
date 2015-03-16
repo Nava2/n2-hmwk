@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iomanip>
 #include <memory>
+#include <ctime>
 
 #include "utilsToStudents.h"
 
@@ -97,17 +98,17 @@ int main(const int argc, const char** argv) {
         return 1;
     }
 
-    srand(7777);
+    srand(time(NULL));
     
     const CLIInput input = { argv[1], std::stoul(argv[2]) };
 
-    std::cout << input << std::endl;
+//     std::cout << input << std::endl;
 
     const auto train = DatabaseFactory::createFromFile<std::string>(input.n, input.text, true); 
     
     const auto sentence = generateSentence(train);
    
-    cout << "Generated Sentence:" << endl << "--> ";
+//     cout << "Generated Sentence:" << endl << "--> ";
     for (const auto &word: sentence) {
         cout << word << " ";
     }

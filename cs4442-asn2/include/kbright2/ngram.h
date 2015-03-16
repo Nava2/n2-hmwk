@@ -41,15 +41,19 @@ public:
     }
     
     NGram(const NGram<T>&& other)
-        : _N(other._N), _val(other._val), _context(other._context) {
+        : _N(other._N), _val(std::move(other._val)), _context(std::move(other._context)) {
         
     }
     
-    
-    
-    ~NGram() {
+    NGram<T>& operator=(const NGram<T>&& other) {
+        this->_context = std::move(other._context);
+        this->_val = std::move(other._val);
+        this->_N = std::move(other._N);
         
+        return *this;
     }
+    
+    ~NGram() { }
     
     bool operator==(const NGram &other) const noexcept{
         return (this->_N == other._N && 
@@ -127,9 +131,9 @@ public:
     
 private:
     
-    const size_t _N;
-    const T _val;
-    const std::vector<T> _context;
+    size_t _N;
+    T _val;
+    std::vector<T> _context;
     
 };
 

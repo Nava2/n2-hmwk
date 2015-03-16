@@ -41,7 +41,7 @@ int main(const int argc, const char** argv) {
 
     const CLIInput input = { argv[1], argv[2], std::stoul(argv[3]) };
 
-    std::cout << input << std::endl;
+//     std::cout << input << std::endl;
 
     const auto train = DatabaseFactory::createFromFile<std::string>(input.n, input.train, true); 
     std::vector<std::string> tokens;
@@ -49,6 +49,7 @@ int main(const int argc, const char** argv) {
     
     const auto tests = kbright2::parseSentences(tokens);
     
+    std::vector<std::vector<std::string> > goodSentences;
     size_t zero_count = 0;
     for (const auto& sentence : tests) {
         if (sentence.size() < input.n) {
@@ -62,15 +63,23 @@ int main(const int argc, const char** argv) {
             sentenceProb += train.depProb(ngram);
         }
         
+        
         if (sentenceProb == 0.0) {
             ++zero_count;
+        } else {
+            goodSentences.push_back(sentence);
         }
         
     }
     
-    std::cout << std::setprecision(2) << (1.0* zero_count / tests.size()) << std::endl;
-
-//     computeDifference(first, second, input.shouldPrint);
+    std::cout << std::setprecision(4) << ((100.0 * zero_count) / tests.size()) << std::endl;
+    for (const auto& sentence: goodSentences) {
+        std::cout << "\\item ``";
+        for (const auto& w: sentence) {
+            std::cout << w << " ";
+        }
+        std::cout << "''" << std::endl;
+    }
 
     return 0;
 }
