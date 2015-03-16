@@ -514,7 +514,229 @@ To ease the problem of finding the longest ngram, I wrote a simple C++ source to
 \begin{homeworkProblem}
 
 \begin{enumerate}[label=\alph*]
-\item The source for this problem is found in 
+\item The source for this problem is found in \verb|src/kbright2/p6/p6.cpp|.
+
+\item This problem investigates the difference that changing Delta has on spellcheck capabilities. The results of running the command are shown in the list this item. The calculated error rate of each change is shown in \autoref{table:P6b}. It appears as though the reduction of delta increases the likelyhood that the proper choice is chosen. However, all three had problems with: ``I want to play in the park at dawn'' which is already correct and there is no error.  
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+2                              & 1              & 25\%                                    \\
+2                              & 0.1            & 12.5\%                                  \\
+2                              & 0.01           & 12.5\%                                  \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt <N> 3 <Delta> 1|. }
+\label{table:P6b}
+\end{center}
+\end{table}
+
+\begin{itemize}
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 1 1|
+
+i would love to hear the story $\langle END \rangle$ 
+
+you will ed in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to plays in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 0.1 1|
+
+i would love to hear the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 0.01 1|
+
+i would love to hear the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\end{itemize}
+
+\item The results of running the spellchecker are in \autoref{table:P6c} and the list following this paragraph. Counter-intuitively, the error rate increased with $N = 3$ vs. $N = 2$. This may be a fluke in the test data as the sample set is small. Intuitively the error rate should be inversely proportional to N, that is, the error rate decreases while N increases. This is because there is more context given to spelling errors. Additionally, we treat every sentence as an individual sandbox where other context from previous sentences may be useful for improving these rates. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+1                              & 0.01           & 50\%                                    \\
+2                              & 0.01           & 12.5\%                                  \\
+3                              & 0.01           & 25\%                                  \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt <N> 3 <Delta> 1|. }
+\label{table:P6c}
+\end{center}
+\end{table}
+
+\begin{itemize}
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 1 3 0.01 1|
+
+i would love to he the story $\langle END \rangle$ 
+
+you will re in the garden $\langle END \rangle$ 
+
+hello from the to of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to play in the park at down $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 0.01 1|
+i would love to hear the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 3 3 0.01 1|
+
+it would love to her the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+
+\end{itemize}
+
+\item \autoref{table:P6d} shows the results of applying Good Turing against the test data. This result remains biased due to small test data. However, it does increase with increasing N. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Threshold} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+1                              & 3                  & 37.5\%                                  \\
+2                              & 3                  & 25\%                                    \\
+3                              & 3                  & 25\%                                    \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt <N> 3 <Delta> 1|. }
+\label{table:P6d}
+\end{center}
+\end{table}
+
+\begin{itemize}
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 1 3 1 0|
+
+i would love to he the story $\langle END \rangle$ 
+
+you will re in the garden $\langle END \rangle$ 
+
+hello from the to of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to play in the park at down $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 1 0|
+
+it would love to her the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 1 0|
+
+it would love to her the story $\langle END \rangle$
+ 
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+
+\end{itemize}
+
 \end{enumerate}
 
 \end{homeworkProblem}
