@@ -1,0 +1,745 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Programming/Coding Assignment
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Original author:
+% Ted Pavlic (http://www.tedpavlic.com)
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing assignment content.
+%
+% This template uses a Perl script as an example snippet of code, most other
+% languages are also usable. Configure them in the "CODE INCLUSION 
+% CONFIGURATION" section.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\usepackage{fancyhdr} % Required for custom headers
+\usepackage{lastpage} % Required to determine the last page for the footer
+\usepackage{extramarks} % Required for headers and footers
+\usepackage[usenames,dvipsnames]{color} % Required for custom colors
+\usepackage{graphicx} % Required to insert images
+\usepackage{listings} % Required for insertion of code
+\usepackage{courier} % Required for the courier font
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{cprotect}
+\usepackage{tabularx}
+
+
+\DeclareGraphicsExtensions{.png,.jpeg}
+
+% Margins
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\linespread{1.1} % Line spacing
+
+% Set up the header and footer
+\pagestyle{fancy}
+\lhead{\hmwkAuthorName} % Top left header
+\chead{\hmwkClass\ (\hmwkClassInstructor): \hmwkTitle} % Top center head
+\rhead{\firstxmark} % Top right header
+\lfoot{\lastxmark} % Bottom left footer
+\cfoot{} % Bottom center footer
+\rfoot{Page\ \thepage\ of\ \protect\pageref{LastPage}} % Bottom right footer
+\renewcommand\headrulewidth{0.4pt} % Size of the header rule
+\renewcommand\footrulewidth{0.4pt} % Size of the footer rule
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+%----------------------------------------------------------------------------------------
+%	CODE INCLUSION CONFIGURATION
+%----------------------------------------------------------------------------------------
+
+\definecolor{MyDarkGreen}{rgb}{0.0,0.4,0.0} % This is the color used for comments
+\lstloadlanguages{MATLAB} % Load Perl syntax for listings, for a list of other languages supported see: ftp://ftp.tex.ac.uk/tex-archive/macros/latex/contrib/listings/listings.pdf
+\lstset{language=C++, % Use Perl in this example
+        frame=single, % Single frame around code
+        basicstyle=\small\ttfamily, % Use small true type font
+        keywordstyle=[1]\color{Blue}\bf, % Perl functions bold and blue
+        keywordstyle=[2]\color{Purple}, % Perl function arguments purple
+        keywordstyle=[3]\color{Blue}\underbar, % Custom functions underlined and blue
+        identifierstyle=, % Nothing special about identifiers                                         
+        commentstyle=\usefont{T1}{pcr}{m}{sl}\color{MyDarkGreen}\small, % Comments small dark green courier font
+        stringstyle=\color{Purple}, % Strings are purple
+        showstringspaces=false, % Don't put marks in string spaces
+        tabsize=5, % 5 spaces per tab
+        %
+        % Put standard Perl functions not included in the default language here
+        morekeywords={rand},
+        %
+        % Put Perl function parameters here
+        morekeywords=[2]{on, off, interp},
+        %
+        % Put user defined functions here
+        morekeywords=[3]{test},
+       	%
+        morecomment=[l][\color{Blue}]{...}, % Line continuation (...) like blue comment
+        numbers=left, % Line numbers on left
+        firstnumber=1, % Line numbers start with line 1
+        numberstyle=\tiny\color{Blue}, % Line numbers are blue and small
+        stepnumber=5 % Line numbers go in steps of 5
+}
+
+% Creates a new command to include a perl script, the first parameter is the filename of the script (without .pl), the second parameter is the caption
+\newcommand{\srcfile}[3]{
+\begin{itemize}
+\item[]\lstinputlisting[caption=#2,label=src:#1]{../#3}
+\end{itemize}
+}
+
+%----------------------------------------------------------------------------------------
+%	DOCUMENT STRUCTURE COMMANDS
+%	Skip this unless you know what you're doing
+%----------------------------------------------------------------------------------------
+
+% Header and footer for when a page split occurs within a problem environment
+\newcommand{\enterProblemHeader}[1]{
+\nobreak\extramarks{#1}{#1 continued on next page\ldots}\nobreak
+\nobreak\extramarks{#1 (continued)}{#1 continued on next page\ldots}\nobreak
+}
+
+% Header and footer for when a page split occurs between problem environments
+\newcommand{\exitProblemHeader}[1]{
+\nobreak\extramarks{#1 (continued)}{#1 continued on next page\ldots}\nobreak
+\nobreak\extramarks{#1}{}\nobreak
+}
+
+\setcounter{secnumdepth}{0} % Removes default section numbers
+\newcounter{homeworkProblemCounter} % Creates a counter to keep track of the number of problems
+
+\newcommand{\homeworkProblemName}{}
+\newenvironment{homeworkProblem}[1][Problem \arabic{homeworkProblemCounter}]{ % Makes a new environment called homeworkProblem which takes 1 argument (custom name) but the default is "Problem #"
+\stepcounter{homeworkProblemCounter} % Increase counter for number of problems
+\renewcommand{\homeworkProblemName}{#1} % Assign \homeworkProblemName the name of the problem
+\section{\homeworkProblemName} % Make a section in the document with the custom problem count
+\enterProblemHeader{\homeworkProblemName} % Header and footer within the environment
+}{
+\exitProblemHeader{\homeworkProblemName} % Header and footer after the environment
+}
+
+\newcommand{\problemAnswer}[1]{ % Defines the problem answer command with the content as the only argument
+\noindent\framebox[\columnwidth][c]{\begin{minipage}{0.98\columnwidth}#1\end{minipage}} % Makes the box around the problem answer and puts the content inside
+}
+
+\newcommand{\homeworkSectionName}{}
+\newenvironment{homeworkSection}[1]{ % New environment for sections within homework problems, takes 1 argument - the name of the section
+\renewcommand{\homeworkSectionName}{#1} % Assign \homeworkSectionName to the name of the section from the environment argument
+\subsection{\homeworkSectionName} % Make a subsection with the custom name of the subsection
+\enterProblemHeader{\homeworkProblemName\ [\homeworkSectionName]} % Header and footer within the environment
+}{
+\enterProblemHeader{\homeworkProblemName} % Header and footer after the environment
+}
+
+%----------------------------------------------------------------------------------------
+%	NAME AND CLASS SECTION
+%----------------------------------------------------------------------------------------
+
+\newcommand{\hmwkTitle}{Assignment\ \#2} % Assignment title
+\newcommand{\hmwkDueDate}{March 16,\ 2015} % Due date
+\newcommand{\hmwkClass}{CS\ 4442B} % Course/class
+\newcommand{\hmwkClassTime}{} % Class/lecture time
+\newcommand{\hmwkClassInstructor}{Olga\ Veksler} % Teacher/lecturer
+\newcommand{\hmwkAuthorName}{Kevin Brightwell} % Your name
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title{
+\vspace{2in}
+\textmd{\textbf{\hmwkClass:\ \hmwkTitle}}\\
+\normalsize\vspace{0.1in}\small{Due\ on\ \hmwkDueDate}\\
+\vspace{0.1in}\large{\textit{\hmwkClassInstructor\ \hmwkClassTime}}
+\vspace{3in}
+}
+
+\author{\textbf{\hmwkAuthorName}}
+\date{} % Insert date here if you want it to appear below your name
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+%----------------------------------------------------------------------------------------
+%	TABLE OF CONTENTS
+%----------------------------------------------------------------------------------------
+
+%\setcounter{tocdepth}{1} % Uncomment this line if you don't want subsections listed in the ToC
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{About}
+
+The vast majority of this assignment's code is found in \verb|include/kbright2|. The source files for each executable are found in \verb|src/kbright2/p*| where \verb|p1| implies problem 1, etc.. Each file in \verb|include/kbright2| is documented with its functionality. The objects/namespaces instances are documented inline with what each method or object does. Unit tests were written to cover some of these objects as they were used consistently. In completing unit tests, \verb|test/catch/catch.hpp| was added as a dependency to this project. The file is not written by the author and is available at \href{http://catch-lib.net/}{Catch Lib}. This project is built via CMake and has been tested on Linux and Mac OS X. It has no external dependencies, thus should run without concern on Windows. 
+
+%----------------------------------------------------------------------------------------
+%	PROBLEM 1
+%----------------------------------------------------------------------------------------
+
+% To have just one problem per page, simply put a \clearpage after each problem
+
+\begin{homeworkProblem}
+
+\begin{enumerate}[label=\alph*]
+
+\item Program for \verb|P1| is found in \verb|src/kbright2/p1/p1.cpp|. 
+\item \autoref{table:P1_Dostoevsky_vs_Dostoevsky} shows the results of running \verb|P1| against the two Dostoevsky parts. With $N$ of $6$, the zero percentage nearly becomes $100\%$. It is likely to converge to zero, but is asymptotic due to the authors literary style and the input data. While increasing $N$ to $12$, I found that there is a passage in which a character recalls a conversation verbatim which means that there will be an N-gram which is common that matches the entire recollection, $N = 17$, ``repulsion that s what i m afraid of that s what may be too much for me''. Thus the largest $N$ with no common values is $N = 18$. 
+
+To ease the problem of finding the longest ngram, I wrote a simple C++ source to find it based on a maximum $N$ value. This file is shown in \autoref{src:p1-find-longest.cpp}. To perform the action for this question, I used: \verb|P1-find-longest ./DostoevskyPart1.txt ./DostoevskyPart2.txt 18|, alternatively using the solution, \verb|P1|, one could run it for $N = 1..N_{max}$ until the proper value is found. 
+
+\begin{table}[hc]
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{N}} & \multicolumn{1}{c}{\textbf{\%}} \\ \midrule
+1                              & 3.5                             \\
+2                              & 34.6                            \\
+3                              & 76.5                            \\
+4                              & 95.0                            \\
+5                              & 99.1                            \\
+6                              & 99.8                            \\ \bottomrule
+\end{tabular}
+
+\cprotect\caption{Results of: \verb|P1 ./DostoevskyPart1.txt ./DostoevskyPart2.txt <N> 0|. }
+\label{table:P1_Dostoevsky_vs_Dostoevsky}
+\end{center}
+\end{table}
+
+\srcfile{p1-find-longest.cpp}{Find longest ngram source file.}{src/kbright2/p1/p1-find-longest.cpp}
+
+\item This problem asked to repeat the previous problem using ``Dickens.txt'' and ``KafkaTrial.txt''. The results are shown in \autoref{table:P1_Dickens_vs_KafkaTrial}. Using \autoref{src:p1-find-longest.cpp}, the longest common n-grams were found to be: ``there is no such thing as a'' and ``in the middle of the table and.'' The largest $N$ with no common values is $N = 8$. 
+ 
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{N}} & \multicolumn{1}{c}{\textbf{\%}} \\ \midrule
+1                              & 7.1                             \\
+2                              & 50.4                            \\
+3                              & 89.4                            \\
+4                              & 98.8                            \\
+5                              & 99.8                            \\
+6                              & 100.0                             \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P1 ./Dickens.txt ./KafkaTrial.txt <N> 0|. }
+\label{table:P1_Dickens_vs_KafkaTrial}
+\end{center}
+\end{table}
+
+\item This problem used ``MarxEngelsManifest.txt'' and ``Smith-WealthNations.txt'' for comparison. The results are shown in \autoref{table:P1_MarxManifest_vs_SmithWealth}. Using \autoref{src:p1-find-longest.cpp}, the smallest $N$ with no common n-grams is $7$, and the longest common n-grams were found as: 
+\begin{itemize}
+\item ``to keep up the rate of''
+\item ``in order to keep up the''
+\item ``is the same as that of''
+\item ``from them what they have not''
+\item ``of a man s own labour''
+\item ``of nature and of reason the''
+\end{itemize}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{N}} & \multicolumn{1}{c}{\textbf{\%}} \\ \midrule
+1 & 22 \\
+2 & 74.8 \\
+3 & 96.7 \\
+4 & 99.7 \\
+5 & 100.0 \\
+6 & 100.0 \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P1 ./MarxEngelsManifest.txt ./SmithWealthNations.txt <N> 0|. }
+\label{table:P1_MarxManifest_vs_SmithWealth}
+\end{center}
+\end{table}
+
+\item The differences between the different values are based entirely on the textual content. For the first dataset, they are the same author and same book split into two. This means that there is a high likely hood of occurrence of something such as the "recollection" passage creating the common ngram of size 18. The second set of values converged quickly because there is no commonality between either the textual content or the authors. This leads into why the third set has commonalities; the content is an opposing view point of the same subject matter by different authors. This implies that each author will dispute the same points, however, they each have different writing styles and will not write the same stylistically. 
+
+\end{enumerate}
+
+\end{homeworkProblem}
+
+
+%----------------------------------------------------------------------------------------
+\begin{homeworkProblem}
+
+\begin{enumerate}[label=\alph*]
+\item The source for this problem is found in \verb|src/kbright2/p2/p2.cpp|.
+\item The computed values are shown in \autoref{table:P2_Dickens_vs_Dostoevsky}. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{N}} & \multicolumn{1}{c}{\textbf{\%}} \\ \midrule
+1 & 0 \\
+2 & 2.12 \\
+3 & 14.81 \\
+4 & 58.16 \\
+5 & 85.82 \\
+6 & 89.56 \\\bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P1 ./MarxEngelsManifest.txt ./SmithWealthNations.txt <N> 0|. }
+\label{table:P2_Dickens_vs_Dostoevsky}
+\end{center}
+\end{table}
+
+\item The sentences of non-zero probability that are at \textit{least} of size 6 are: 
+\begin{itemize}
+\item ``i don t know how i got there or what possessed me to go there but there i was and completely dressed too with a huge pea coat on and a pair of boots such as no weak man in his senses could ever have got into $\langle$END$\rangle$''
+\item ``i don t know what $\langle$END$\rangle$''
+\item ``i saw by his gestures that he addressed me but it was a long time before i could make out that he remonstrated against my standing up to my knees in water as i was of course i don t know why $\langle$END$\rangle$''
+\item ``i suppose i dodged them up and down this sofa for at least a quarter of an hour without reaching them once and by the time i did catch them the brandy and water was diminished by constant spilling to a teaspoonful $\langle$END$\rangle$''
+\item ``eased by this report and by the assurance that the tide was past the ebb we turned in at three o clock in the morning $\langle$END$\rangle$''
+\item ``the learned gentleman like a few of his english brethren was desperately long winded and had a remarkable capacity of saying the same thing over and over again $\langle$END$\rangle$''
+\item ``they who strew the eternal path with the greatest amount of brimstone and who most ruthlessly tread down the flowers and leaves that grow by the wayside will be voted the most righteous and they who enlarge with the greatest pertinacity on the difficulty of getting into heaven will be considered by all true believers certain of going there though it would be hard to say by what process of reasoning this conclusion is arrived at $\langle$END$\rangle$''
+\item ``looking out of my chamber window before going to bed i saw on the opposite side of the way a handsome building of white marble which had a mournful ghost like aspect dreary to behold $\langle$END$\rangle$''
+\item ``he shook his head at the word turned aside and covered his face with his hands $\langle$END$\rangle$''
+\item ``in less than a quarter of an hour s time these hopeful youths had shed about them on the clean boards a copious shower of yellow rain clearing by that means a kind of magic circle within whose limits no intruders dared to come and which they never failed to refresh and re refresh before a spot was dry $\langle$END$\rangle$''
+\item ``many a budding president has walked into my room with his cap on his head and his hands in his pockets and stared at me for two whole hours occasionally refreshing himself with a tweak of his nose or a draught from the water jug or by walking to the windows and inviting other boys in the street below to come up and do likewise crying here he is $\langle$END$\rangle$''
+\item ``one a tall wiry muscular old man from the west sunburnt and swarthy with a brown white hat on his knees and a giant umbrella resting between his legs who sat bolt upright in his chair frowning steadily at the carpet and twitching the hard lines about his mouth as if he had made up his mind to fix the president on what he had to say and wouldn t bate him a grain $\langle$END$\rangle$''
+\item ``he looked somewhat worn and anxious and well he might being at war with everybody but the expression of his face was mild and pleasant and his manner was remarkably unaffected gentlemanly and agreeable $\langle$END$\rangle$''
+\item ``a canal boat we were to proceed in the first instance by steamboat and as it is usual to sleep on board in consequence of the starting hour being four o clock in the morning we went down to where she lay at that very uncomfortable time for such expeditions when slippers are most valuable and a familiar bed in the perspective of an hour or two looks uncommonly pleasant $\langle$END$\rangle$''
+\item ``black driver with his eyes starting out of his head $\langle$END$\rangle$''
+\item ``all the tobacco thus dealt with was in course of manufacture for chewing and one would have supposed there was enough in that one storehouse to have filled even the comprehensive jaws of america $\langle$END$\rangle$''
+\item ``a bell rang as i was about to leave and they all poured forth into a building on the opposite side of the street to dinner $\langle$END$\rangle$''
+\item ``i left the last of them behind me in the person of a wretched drudge who after running to and fro all day till midnight and moping in his stealthy winks of sleep upon the stairs betweenwhiles was washing the dark passages at four o clock in the morning and went upon my way with a grateful heart that i was not doomed to live where slavery was and had never had my senses blunted to its wrongs and horrors in a slave rocked cradle $\langle$END$\rangle$''
+\item ``one was that of a young man who had been tried for the murder of his father $\langle$END$\rangle$''
+\item ``i don t know what the sensation of being darned may be or whether a man s mother has a keener relish or disrelish of the process than anybody else but if the endurance of this mysterious ceremony by the old lady in question had depended on the accuracy of her son s vision in respect to the abstract brightness and smartness of the harrisburg mail she would certainly have undergone its infliction $\langle$END$\rangle$''
+\item ``there was a man on board this boat with a light fresh coloured face and a pepper and salt suit of clothes who was the most inquisitive fellow that can possibly be imagined $\langle$END$\rangle$''
+\item ``even the running up bare necked at five o clock in the morning from the tainted cabin to the dirty deck scooping up the icy water plunging one s head into it and drawing it out all fresh and glowing with the cold was a good thing $\langle$END$\rangle$''
+\item ``cincinnati the messenger was one among a crowd of high pressure steamboats clustered together by a wharf side which looked down upon from the rising ground that forms the landing place and backed by the lofty bank on the opposite side of the river appeared no larger than so many floating models $\langle$END$\rangle$''
+\item ``he told me that he had been away from his home west of the mississippi seventeen months and was now returning $\langle$END$\rangle$''
+\item ``louis and here was the wharf and those were the steps and the little woman covering her face with her hands and laughing or seeming to laugh more than ever ran into her own cabin and shut herself up $\langle$END$\rangle$''
+\item ``there were no ladies the trip being a fatiguing one and we were to start at five o clock in the morning punctually $\langle$END$\rangle$''
+\item ``but as everything was very quiet and the street presented that hopeless aspect with which five o clock in the morning is familiar elsewhere i deemed it as well to go to bed again and went accordingly $\langle$END$\rangle$''
+\item ``from belleville we went on through the same desolate kind of waste and constantly attended without the interval of a moment by the same music until at three o clock in the afternoon we halted once more at a village called lebanon to inflate the horses again and give them some corn besides of which they stood much in need $\langle$END$\rangle$''
+\item ``we start at eight o clock in the morning in a great mail coach whose huge cheeks are so very ruddy and plethoric that it appears to be troubled with a tendency of blood to the head $\langle$END$\rangle$''
+\item ``it would be impossible to experience a similar set of sensations in any other circumstances unless perhaps in attempting to go up to the top of st $\langle$END$\rangle$''
+\item ``still it was a fine day and the temperature was delicious and though we had left summer behind us in the west and were fast leaving spring we were moving towards niagara and home $\langle$END$\rangle$''
+\item ``when i say that he constantly walked in and out of the room with his hat on and stopped to converse in the same free and easy state and lay down on our sofa and pulled his newspaper out of his pocket and read it at his ease i merely mention these traits as characteristic of the country not at all as being matter of complaint or as having been disagreeable to me $\langle$END$\rangle$''
+\item ``it is of much higher importance than it may seem that this statue should be repaired at the public cost as it ought to have been long ago $\langle$END$\rangle$''
+\item ``we accordingly repaired to a store in the same house and on the opposite side of the passage where the stock was presided over by something alive in a russet case which the elder said was a woman and which i suppose was a woman though i should not have suspected it $\langle$END$\rangle$''
+\item ``on the opposite side of the road was their place of worship a cool clean edifice of wood with large windows and green blinds like a spacious summer house $\langle$END$\rangle$''
+\item ``three of his fingers are drawn into the palm of his hand by a cut $\langle$END$\rangle$''
+\item ``when any man of any grade of desert in intellect or character can climb to any public distinction no matter what in america without first grovelling down upon the earth and bending the knee before this monster of depravity when any private excellence is safe from its attacks when any social confidence is left unbroken by it or any tie of social decency and honour is held in the least regard when any man in that free country has freedom of opinion and presumes to think for himself and speak for himself without humble reference to a censorship which for its rampant ignorance and base dishonesty he utterly loathes and despises in his heart when those who most acutely feel its infamy and the reproach it casts upon the nation and who most denounce it to each other dare to set their heels upon and crush it openly in the sight of all men then i will believe that its influence is lessening and men are returning to their manly senses $\langle$END$\rangle$''
+\item ``good afternoon sir said i and that was the end of the interview $\langle$END$\rangle$''
+\item ``it is enough for me to know that what i have set down in these pages cannot cost me a single friend on the other side of the atlantic who is in anything deserving of the name $\langle$END$\rangle$''
+
+\end{itemize}
+
+\end{enumerate}
+
+\end{homeworkProblem}
+
+%----------------------------------------------------------------------------------------
+\begin{homeworkProblem}
+
+\begin{enumerate}[label=\alph*]
+
+\item The source for this problem is found in \verb|src/kbright2/p3/p3.cpp|. 
+
+\item \autoref{table:P3_KafkaTrial} shows the output of randomly generated sentences with the training data as ``KafkaTrial.txt''.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{0.8\linewidth}{l X}
+\toprule
+\multicolumn{1}{c}{\textbf{N}} & \multicolumn{1}{c}{\textbf{Result}} \\ \midrule
+1 & ``had his the next good us montag deferment $\langle$END$\rangle$'' \\
+2 & ``it was the side street i m even if his head using those who seemed under the church staff from everything thoroughly $\langle$END$\rangle$'' \\
+3 & ``took my leave of each other here on canvas and you know what it was like an empty niche where the people talked to each other on the desk they ve been telling lies about my trial at all $\langle$END$\rangle$'' \\
+4 & ``and highly capable men they didn t succeed in any of that not in the slightest even my landlady who is quite a simple person and i will be glad to do so i have been informed $\langle$END$\rangle$'' \\
+5 & ``just did not feel like contradicting him $\langle$END$\rangle$'' \\
+6 & ``spite of all that we re still willing if you ve got the money to go and get you some breakfast from the caf over the road $\langle$END$\rangle$'' \\ \bottomrule
+\end{tabularx}
+\cprotect\caption{Results of: \verb|P3 KafkaTrial.txt <N>|. }
+\label{table:P3_KafkaTrial}
+\end{center}
+\end{table}
+
+\item Running \verb|P3| with ``MarxEngelsManifest.txt'' produced the following sentence for $N = 3$: ``their periodical return put on its part german socialism recognised more and more vanishing owing to the german philistines $\langle$END$\rangle$''. From the content of each sentence, it is very obvious that they were trained with different documents. The first talks about a trial and lies, large topics in the KafkaTrail document. The latter discusses socialism which is one of the founding principles of the Marxist Manifest. 
+
+\item ``him so right in her but kept secret resentment towards the candle so big spite of him $\langle$END$\rangle$''
+
+\textit{Author's note:} I'm terribly immature.
+
+\end{enumerate}
+
+\end{homeworkProblem}
+
+
+%----------------------------------------------------------------------------------------
+\begin{homeworkProblem}
+
+\begin{enumerate}[label=\alph*]
+
+\item The source for this problem is found in \verb|src/kbright2/p4/p4.cpp|. 
+
+\item The results of \verb|P4| are shown in \autoref{table:P4_AddDelta}. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccrl@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \multicolumn{1}{c}{\textbf{S1}} & \textbf{S2} \\ \midrule
+1                              & 1              & -83.164                         & -106.96     \\
+2                              & 1              & -110.01                         & -136.73     \\
+2                              & 0.001          & -51.526                         & -195.49     \\
+3                              & 0.001          & -91.844                         & -145.22     \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P4 KafkaTrial.txt testFile.txt <N> <Delta> 1|. }
+\label{table:P4_AddDelta}
+\end{center}
+\end{table}
+
+\item The results of \verb|P4| for Good Turing are shown in \autoref{table:P4_Threshold}.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccrl@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{threshold} & \multicolumn{1}{c}{\textbf{S1}} & \textbf{S2} \\ \midrule
+1                              & 1              & -44.571                         & -141.45     \\
+2                              & 5              & -91.482                         & -223.51     \\
+3                              & 5              & -99.767                         & -235.69     \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P4 KafkaTrial.txt testFile.txt <N> <Threshold> 0|. }
+\label{table:P4_Threshold}
+\end{center}
+\end{table}
+
+
+\end{enumerate}
+
+\end{homeworkProblem}
+
+%----------------------------------------------------------------------------------------
+\begin{homeworkProblem}
+
+\begin{enumerate}[label=\alph*]
+\item The source for this problem is found in \verb|src/kbright2/p5/p5.cpp|.
+
+\item For items (b) to (d) all values are shown in \autoref{table:P5_bcd}.
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}cccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \textbf{Sentence Length} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+1 & 0 & 50 & 7.41\% \\
+2 & 0 & 50 & 19.04\% \\
+3 & 0 & 50 & 47.25\% \\ \midrule
+1 & 0.05 & 50 & 5.976\% \\
+2 & 0.05 & 50 & 1.514\% \\
+3 & 0.05 & 50 & 1.912\% \\ \midrule
+3 & 0.05 & 50 & 1.912\% \\
+3 & 0.005 & 50 & 1.434\% \\
+3 & 0.0005 & 50 & 1.514\% \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P5 <N> <Delta> <SentenceLength>|. }
+\label{table:P5_bcd}
+\end{center}
+\end{table}
+
+\item For items (b) to (d) all values are shown in \autoref{table:P5_bcd}.
+\item For items (b) to (d) all values are shown in \autoref{table:P5_bcd}.
+
+\item There is not a clear cut answer as to which parameter, Delta or N improves performance. Delta can cause hinderances with performance due to the formula \textit{not} taking the language model into account. This means that while delta helps to smooth out the missing values, it can actually add more false positives to the results. That being said, having a delta always is better than the MLE approach.  
+
+\item Results are shown in \autoref{table:P5_f}.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}lccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \textbf{Sentence Length} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+2 & 0.05 & 10 & 27.5\% \\
+2 & 0.05 & 50 & 2.536\% \\
+2 & 0.05 & 100 & 1.186\% \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P5 <N> <Delta> <SentenceLength>|. }
+\label{table:P5_f}
+\end{center}
+\end{table}
+
+\item The data output is shown in \autoref{table:P5_bcd2}. The data for the 256-character model is vastly better than the 26 character model. While the full latin model may have false characters (punctuation) it also pulls in characters that differentiate languages making it \textbf{much} better than the latin-only model which will not have the ability to consider those characters. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}cccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \textbf{Sentence Length} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+1 & 0 & 50 & 17.24\% \\
+2 & 0 & 50 & 5.664\% \\
+3 & 0 & 50 & 29.16\% \\ \midrule
+1 & 0.05 & 50 & 17.24\% \\
+2 & 0.05 & 50 & 2.536\% \\
+3 & 0.05 & 50 & 2.79\% \\ \midrule
+3 & 0.05 & 50 & 2.79\% \\
+3 & 0.005 & 50 & 3.212\% \\
+3 & 0.0005 & 50 & 3.466\% \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P5 <N> <Delta> <SentenceLength>|. }
+\label{table:P5_bcd2}
+\end{center}
+\end{table}
+
+\end{enumerate}
+
+\end{homeworkProblem}
+
+%----------------------------------------------------------------------------------------
+\begin{homeworkProblem}
+
+\begin{enumerate}[label=\alph*]
+\item The source for this problem is found in \verb|src/kbright2/p6/p6.cpp|.
+
+\item This problem investigates the difference that changing Delta has on spellcheck capabilities. The results of running the command are shown in the list this item. The calculated error rate of each change is shown in \autoref{table:P6b}. It appears as though the reduction of delta increases the likelyhood that the proper choice is chosen. However, all three had problems with: ``I want to play in the park at dawn'' which is already correct and there is no error.  
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+2                              & 1              & 25\%                                    \\
+2                              & 0.1            & 12.5\%                                  \\
+2                              & 0.01           & 12.5\%                                  \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt <N> 3 <Delta> 1|. }
+\label{table:P6b}
+\end{center}
+\end{table}
+
+\begin{itemize}
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 1 1|
+
+i would love to hear the story $\langle END \rangle$ 
+
+you will ed in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to plays in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 0.1 1|
+
+i would love to hear the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 0.01 1|
+
+i would love to hear the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\end{itemize}
+
+\item The results of running the spellchecker are in \autoref{table:P6c} and the list following this paragraph. Counter-intuitively, the error rate increased with $N = 3$ vs. $N = 2$. This may be a fluke in the test data as the sample set is small. Intuitively the error rate should be inversely proportional to N, that is, the error rate decreases while N increases. This is because there is more context given to spelling errors. Additionally, we treat every sentence as an individual sandbox where other context from previous sentences may be useful for improving these rates. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Delta} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+1                              & 0.01           & 50\%                                    \\
+2                              & 0.01           & 12.5\%                                  \\
+3                              & 0.01           & 25\%                                  \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt <N> 3 <Delta> 1|. }
+\label{table:P6c}
+\end{center}
+\end{table}
+
+\begin{itemize}
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 1 3 0.01 1|
+
+i would love to he the story $\langle END \rangle$ 
+
+you will re in the garden $\langle END \rangle$ 
+
+hello from the to of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to play in the park at down $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 0.01 1|
+i would love to hear the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 3 3 0.01 1|
+
+it would love to her the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+
+\end{itemize}
+
+\item \autoref{table:P6d} shows the results of applying Good Turing against the test data. This result remains biased due to small test data. However, it does increase with increasing N. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{@{}ccr@{}}
+\toprule
+\multicolumn{1}{c}{\textbf{n}} & \textbf{Threshold} & \multicolumn{1}{c}{\textbf{Error Rate}} \\ \midrule
+1                              & 3                  & 37.5\%                                  \\
+2                              & 3                  & 25\%                                    \\
+3                              & 3                  & 25\%                                    \\ \bottomrule
+\end{tabular}
+\cprotect\caption{Results of: \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt <N> 3 <Delta> 1|. }
+\label{table:P6d}
+\end{center}
+\end{table}
+
+\begin{itemize}
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 1 3 1 0|
+
+i would love to he the story $\langle END \rangle$ 
+
+you will re in the garden $\langle END \rangle$ 
+
+hello from the to of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to play in the park at down $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 1 0|
+
+it would love to her the story $\langle END \rangle$ 
+
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+\item \verb|P6 hugeTrain.txt textCheck.txt dictionary.txt 2 3 1 0|
+
+it would love to her the story $\langle END \rangle$
+ 
+you will read in the garden $\langle END \rangle$ 
+
+hello from the top of the world $\langle END \rangle$ 
+
+i will drink milk in the morning $\langle END \rangle$ 
+
+i will read the story $\langle END \rangle$ 
+
+i like to eat cereal in the morning $\langle END \rangle$ 
+
+play nicely $\langle END \rangle$ 
+
+i want to lay in the park at dawn $\langle END \rangle$ 
+
+
+\end{itemize}
+
+\end{enumerate}
+
+\end{homeworkProblem}
+
+
+\end{document}
