@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="/home/kevin/workspace/n2-hmwk/ece4489-asn3/ProcTB1_isim_beh.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="numeric_std" />
+            <top_module name="proctb1" />
+            <top_module name="std_logic_1164" />
+            <top_module name="std_logic_arith" />
+            <top_module name="std_logic_unsigned" />
+            <top_module name="subccts" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="22" />
+   <wvobject fp_name="/proctb1/data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">data[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/w" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">w</obj_property>
+      <obj_property name="ObjectShortName">w</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/clock" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/f" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">f[7:0]</obj_property>
+      <obj_property name="ObjectShortName">f[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/buswires" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">buswires[7:0]</obj_property>
+      <obj_property name="ObjectShortName">buswires[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/done" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">done</obj_property>
+      <obj_property name="ObjectShortName">done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/reg0/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">q[7:0]</obj_property>
+      <obj_property name="label">R0</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/reg1/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">q[7:0]</obj_property>
+      <obj_property name="label">R1</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/reg2/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">q[7:0]</obj_property>
+      <obj_property name="label">R2</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/reg3/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">q[7:0]</obj_property>
+      <obj_property name="label">R3</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/regA/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">q[7:0]</obj_property>
+      <obj_property name="label">A</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/regCarry/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[0:0]</obj_property>
+      <obj_property name="ObjectShortName">q[0:0]</obj_property>
+      <obj_property name="label">Carry</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/regTemp/q" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">q[7:0]</obj_property>
+      <obj_property name="label">Temp</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/func" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">func[7:0]</obj_property>
+      <obj_property name="ObjectShortName">func[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/t" type="array" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">t[1:0]</obj_property>
+      <obj_property name="ObjectShortName">t[1:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <obj_property name="label">T</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/rin" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">rin[0:3]</obj_property>
+      <obj_property name="ObjectShortName">rin[0:3]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/rout" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">rout[0:3]</obj_property>
+      <obj_property name="ObjectShortName">rout[0:3]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/extern" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">extern</obj_property>
+      <obj_property name="ObjectShortName">extern</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/funcreg" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">funcreg[7:0]</obj_property>
+      <obj_property name="ObjectShortName">funcreg[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/tempin" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tempin</obj_property>
+      <obj_property name="ObjectShortName">tempin</obj_property>
+   </wvobject>
+   <wvobject fp_name="/proctb1/uut/ControlCircuit/tempout" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">tempout</obj_property>
+      <obj_property name="ObjectShortName">tempout</obj_property>
+   </wvobject>
+</wave_config>
