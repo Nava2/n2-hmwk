@@ -82,6 +82,12 @@ BEGIN
 		Reset <= '0';
 		wait until rising_edge(Clock);
 		
+		F<="11110000"; Data<="ZZZZZZZZ"; -- CLRA
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
 		F<="01001000"; Data<="00000000"; -- LD R0 w/ 0
 		w <= '1';
 		wait until rising_edge(Clock);
@@ -118,11 +124,57 @@ BEGIN
 		w <= '0';
 		wait until Done = '1' and rising_edge(Clock);
 		
-		F<="00000000"; Data<="XXXXXXXX"; -- NOP
+		F<="01000010"; Data<="01111111"; -- LD R2 with '7F'
 		w <= '1';
 		wait until rising_edge(Clock);
 		w <= '0';
 		wait until Done = '1' and rising_edge(Clock);
+		
+		F<="10000010"; Data<="ZZZZZZZZ"; -- ADDA R2
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+	
+		F<="11110000"; Data<="ZZZZZZZZ"; -- CLRA
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+	
+		F <= "11110010"; Data <= "ZZZZZZZZ"; -- INCA
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110010"; Data <= "ZZZZZZZZ"; -- INCA
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110100"; Data <= "ZZZZZZZZ"; -- ~ACC
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110011"; Data <= "ZZZZZZZZ"; -- ~ACC
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F<="00000000"; Data<="ZZZZZZZZ"; -- NOP
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		
+		
+		wait;
 
 --		F<="00"; Rx<="10"; Ry<="00"; Data<="00100010"; -- LD R2 with '22'
 --		w <= '1';
