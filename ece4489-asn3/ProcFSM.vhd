@@ -3,11 +3,11 @@ USE ieee.std_logic_1164.all ;
 USE ieee.std_logic_unsigned.all ;
 USE work.subccts.all;
 ENTITY ProcFSM IS
-PORT ( Clock, Reset, w, cin: IN STD_LOGIC;
+PORT ( Clock, Reset, w: IN STD_LOGIC;
 	func: in std_logic_vector(7 downto 0) ;
 	Done: INOUT STD_LOGIC;
 	Extern, clrOut, cset, Ain, Aout, tempIn,tempOut, cout: OUT STD_LOGIC;
-	ALUOp: out std_logic_vector(2 downto 0);
+	ALUOp: out std_logic_vector(3 downto 0);
 	Rin,Rout: OUT STD_LOGIC_VECTOR(0 TO 3) );
 END ProcFSM;
 
@@ -31,7 +31,7 @@ BEGIN
 		lowF := FuncReg(3 downto 0);
 		
 		Extern <= '0' ; Done <= '0' ; Ain <= '0' ; tempIn <= '0' ;
-		tempOut <= '0' ; ALUOp <= "000"; Rin <= "0000" ; Rout <= "0000" ;
+		tempOut <= '0' ; ALUOp <= "1010"; Rin <= "0000" ; Rout <= "0000" ;
 		cout <= '0'; Aout <= '0'; clrOut <= '0'; cset <= '0';
 		
 		case highF is
@@ -41,7 +41,7 @@ BEGIN
 					when "01" =>
 						tempIn <= '1';
 						Rout <= lowF;
-						ALUOp <= "00" & highF(0); -- tmp now has ACC + Temp
+						ALUOp <= "000" & highF(0); -- tmp now has ACC + Temp
 						cout <= '1';
 					when others => 
 						tempOut <= '1'; -- load ACC <= temp
@@ -99,30 +99,78 @@ BEGIN
 							when "00" =>
 							when "01" => 
 								tempIn <= '1';
-								ALUOp <= "010";  -- temp <= A + 1
+								ALUOp <= "0010";  -- temp <= A + 1
 							when others =>
 								tempOut <= '1'; -- A <= temp
 								Ain <= '1'; 
 								Done <= '1';
 						end case;
 						
-					when "0011" =>
+					when "0100" =>
 						case T is 
 							when "00" =>
 							when "01" =>
 								tempIn <= '1'; -- temp <= ~A
-								ALUOp <= "100";
+								ALUOp <= "1111";
 							when others =>
 								tempOut <= '1'; -- A <= temp
 								Ain <= '1';
 								Done <= '1';
 							end case;
 							
-					when "0100" =>
+					when "0011" =>
 						case T is 
 							when "00" =>
 							when others =>
-								ALUOp <= "101";
+								cout <= '1'; -- carry <= ~carry
+								ALUOp <= "1110";
+								Done <= '1';
+						end case;
+							
+					when "0101"|"0110" => -- shl | shr
+						case T is 
+							when "00" =>
+							when "01" =>
+								ALUOp <= lowF;
+								cout <= '1';
+								tempIn <= '1';
+							when others =>
+								ain <= '1';
+								tempout <= '1';
+								Done <= '1';
+						end case;
+						
+					when "0111"|"1001"|"1011" => -- TCC|TCS|DAA
+						case T is 
+							when "00" =>
+							when "01" =>
+								ALUOp <= lowF;
+								cout <= '1';
+								tempIn <= '1';
+							when others =>
+								ain <= '1';
+								tempout <= '1';
+								Done <= '1';
+						end case;
+					
+					when "1000" => -- DECA
+						case T is 
+							when "00" =>
+							when "01" =>
+								ALUOp <= "0011";
+								cout <= '1';
+								tempIn <= '1';
+							when others =>
+								ain <= '1';
+								tempout <= '1';
+								Done <= '1';
+						end case;
+						
+					when "1010" => -- Set Carry
+						case T is 
+							when "00" =>
+							when others =>
+								cset <= '1';
 								cout <= '1';
 								Done <= '1';
 						end case;
@@ -150,7 +198,7 @@ BEGIN
 						Extern <= '1'; Ain <= '1'; Done <= '1';
 				end case; -- T
 				
-		   when "0010" => -- Load Acc
+		   when "0010" => -- Load Temp
 				case T is
 					when "00" =>
 					when others =>

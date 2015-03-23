@@ -24,11 +24,11 @@ PACKAGE subccts IS
 	END COMPONENT;
 
 	component ProcFSM 
-	PORT ( Clock, Reset, w, cin: IN STD_LOGIC;
+	PORT ( Clock, Reset, w: IN STD_LOGIC;
 		func: in std_logic_vector(7 downto 0) ;
 		Done: INOUT STD_LOGIC;
 		Extern, clrOut, cset, Ain, Aout, tempIn, tempOut, cout: OUT STD_LOGIC;
-		ALUOp: out std_logic_vector(2 downto 0);
+		ALUOp: out std_logic_vector(3 downto 0);
 		Rin,Rout: OUT STD_LOGIC_VECTOR(0 TO 3) );
 	END COMPONENT;
 	

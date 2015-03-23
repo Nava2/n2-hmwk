@@ -160,7 +160,55 @@ BEGIN
 		w <= '0';
 		wait until Done = '1' and rising_edge(Clock);
 		
-		F <= "11110011"; Data <= "ZZZZZZZZ"; -- ~ACC
+		F <= "11110011"; Data <= "ZZZZZZZZ"; -- ~carry
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110101"; Data <= "ZZZZZZZZ"; -- a shl 1
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110110"; Data <= "ZZZZZZZZ"; -- a shr 1
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110111"; Data <= "ZZZZZZZZ"; -- TCC
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11111000"; Data <= "ZZZZZZZZ"; -- DECA
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11111001"; Data <= "ZZZZZZZZ"; -- TCS
+		w <= '1';
+		wait until rising_edge(Clock);
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F<="11111011"; Data<="ZZZZZZZZ"; -- DAA 
+		w <= '1';
+		wait until rising_edge(Clock); -- expect no change
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F <= "11110010"; Data <= "ZZZZZZZZ"; -- INCA 
+		w <= '1';
+		wait until rising_edge(Clock); -- expect A <= 0x10
+		w <= '0';
+		wait until Done = '1' and rising_edge(Clock);
+		
+		F<="11111011"; Data<="ZZZZZZZZ"; -- DAA
 		w <= '1';
 		wait until rising_edge(Clock);
 		w <= '0';
@@ -172,37 +220,6 @@ BEGIN
 		w <= '0';
 		wait until Done = '1' and rising_edge(Clock);
 		
-		
-		
 		wait;
-
---		F<="00"; Rx<="10"; Ry<="00"; Data<="00100010"; -- LD R2 with '22'
---		w <= '1';
---		wait until rising_edge(Clock);
---		w <= '0';
---		wait until Done = '1';
---		wait until rising_edge(Clock);
---
---		F<="10"; Rx<="01"; Ry<="00"; Data<="00000000"; -- ADD R1,R0
---		w <= '1';
---		wait until rising_edge(Clock);
---		w <= '0';   
---		wait until Done = '1';                  --  Observe the '7f' !
---		wait until rising_edge(Clock);
---
---		F<="01"; Rx<="11"; Ry<="01";            --  MOV  R3, R1
---		w <= '1';
---		wait until rising_edge(Clock);
---		w <= '0'; 
---		wait until Done = '1';
---		wait until rising_edge(Clock);
---
---		F<="11"; Rx<="11"; Ry<="10";            -- SUB R3,R2
---		w <= '1';
---		wait until rising_edge(Clock);
---		w <= '0';
---		wait until Done = '1';                  -- observe the 5D !
---		wait until rising_edge(Clock);
---		wait;
 	end process;  
 END;

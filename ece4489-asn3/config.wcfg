@@ -3,7 +3,7 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="/home/kevin/workspace/n2-hmwk/ece4489-asn3/ProcTB1_isim_beh1.wdb" id="1" type="auto">
+      <db_ref path="/home/kevin/workspace/n2-hmwk/ece4489-asn3/ProcTB1_isim_beh.wdb" id="1" type="auto">
          <top_modules>
             <top_module name="numeric_std" />
             <top_module name="proctb1" />
@@ -94,7 +94,7 @@
       <obj_property name="ElementShortName">q[7:0]</obj_property>
       <obj_property name="ObjectShortName">q[7:0]</obj_property>
       <obj_property name="label">Temp</obj_property>
-      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
    </wvobject>
    <wvobject fp_name="/proctb1/uut/ControlCircuit/t" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">t[1:0]</obj_property>
@@ -113,8 +113,8 @@
       <obj_property name="ObjectShortName">aout</obj_property>
    </wvobject>
    <wvobject fp_name="/proctb1/uut/ControlCircuit/aluop" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">aluop[2:0]</obj_property>
-      <obj_property name="ObjectShortName">aluop[2:0]</obj_property>
+      <obj_property name="ElementShortName">aluop[3:0]</obj_property>
+      <obj_property name="ObjectShortName">aluop[3:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/proctb1/uut/ControlCircuit/rout" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">rout[0:3]</obj_property>

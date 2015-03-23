@@ -21,7 +21,7 @@ ARCHITECTURE Behavior2 OF Proc IS
 	
 	signal cVec, coutVec: std_logic_vector(0 to 0);
 	signal carry, cin, cout: std_logic;
-	signal ALUOp: std_logic_vector(2 downto 0);
+	signal ALUOp: std_logic_vector(3 downto 0);
 	
 BEGIN	
 	reg0: regn PORT MAP ( BusWires, Rin(0), Clock, R0 ) ;
@@ -34,20 +34,71 @@ BEGIN
 	cVec(0) <= carry;
 	cout <= coutVec(0);
 	
-	
+	regTemp: regn PORT MAP ( Sum, tempIn, Clock, temp ) ; 
+	Sel <= Rout & tempOut & aOut & clrOut & Extern ;
+	WITH Sel SELECT
+		BusWires <= 
+					R0 			WHEN "10000000",
+					R1 			WHEN "01000000",
+					R2 			WHEN "00100000",
+					R3 			WHEN "00010000",
+					temp			WHEN "00001000",
+					A				WHEN "00000100",
+					"00000000" 	WHEN "00000010",
+					Data 	WHEN OTHERS ;
+					
+	ControlCircuit: ProcFSM PORT MAP(Clock, Reset, w, func,
+			Done, Extern, clrOut, cset, Ain, aOut, tempIn, tempOut, cin, ALUOp, Rin, Rout);
 		
-	alu: process(ALUOp, A, BusWires, coutVec, cset, clrOut) 
+	alu: process(ALUOp, A, BusWires, coutVec, cset, clrOut, cout) 
 		variable add, sub: signed(8 downto 0);
 		variable busVal: signed(8 downto 0);
 		variable AddSub: std_logic;
 	begin
+		carry <= 'Z';
+		sum <= (others => 'Z');
+	
 		case ALUOp is 
-			when "100" => -- not
+			when "1111" => -- not
 				sum <= not A;
-			when "101" => -- not carry
+			when "1110" => -- not carry
 				carry <= not cout;
 				
-			when "000"|"010"|"001"|"011" =>
+			when "0101" =>
+				-- shl 1
+				carry <= A(7);
+				sum <= A(6 downto 0) & A(0);
+				
+			when "0110" =>
+				-- shr 1
+				carry <= A(0);
+				sum <= A(7) & A(7 downto 1);
+				
+			when "0111" =>
+				carry <= '0';
+				sum <= ( 0 => cout, others => '0' );
+				
+			when "1001" =>
+				sum(7 downto 2) <= "000010";
+				carry <= '0';
+				if (cout = '0') then
+					sum(1 downto 0) <= "01";
+				else 
+					sum(1 downto 0) <= "10";
+				end if;
+				
+			when "1011" =>
+				if ((signed(A) > 9) or (cout = '1')) then
+					add := signed(A(A'high) & A) + 6;
+					sum <= std_logic_vector(add(add'high - 1 downto 0));
+					carry <= std_logic(add(add'high - 1));
+				else 
+					sum <= A;
+					carry <= cout;
+				end if;
+				
+				
+			when "0000"|"0010"|"0001"|"0011" =>
 				
 				if (ALUOp(1) = '1') then 
 					busVal := "000000001";
@@ -77,21 +128,5 @@ BEGIN
 			carry <= '0';
 		end if;
 	end process;
-	
-	regTemp: regn PORT MAP ( Sum, tempIn, Clock, temp ) ; 
-	Sel <= Rout & tempOut & aOut & clrOut & Extern ;
-	WITH Sel SELECT
-		BusWires <= 
-					R0 			WHEN "10000000",
-					R1 			WHEN "01000000",
-					R2 			WHEN "00100000",
-					R3 			WHEN "00010000",
-					temp			WHEN "00001000",
-					A				WHEN "00000100",
-					"00000000" 	WHEN "00000010",
-					Data 	WHEN OTHERS ;
-					
-	ControlCircuit: ProcFSM PORT MAP(Clock, Reset, w, cout, func,
-			Done, Extern, clrOut, cset, Ain, aOut, tempIn, tempOut, cin, ALUOp, Rin, Rout);
 
 END Behavior2 ;
