@@ -19,5 +19,31 @@
 
 function segm  = segmentGC(im,scribbleMask)
 
+E = computeEngColor(im, [1 1 1]);
+
+M = im;
+[I, J] = ind2sub(size(E), find(E < 175));
+for i_ = 1:size(I)
+    M(I(i_), J(i_), :) = 0;
+end
+imtool(uint8(M));
+
+M = im;
+[I, J] = ind2sub(size(E), find(E < 220));
+for i_ = 1:size(I)
+    M(I(i_), J(i_), :) = 0;
+end
+imtool(uint8(M));
+
+M = E(scribbleMask == 2);
+fmin = min(M);
+fmax = max(M);
+
+Df = fmax - E;
+Db = E - fmin;
+
 [row,col,d] = size(im);
 segm = ones(row,col);  % return the whole image as the foreground 
+
+
+end
