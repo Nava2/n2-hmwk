@@ -1,7 +1,8 @@
-function [imOut, cost] = intelligentResize(im,v,h,w, mask,maskWeight)
-%UNTITLED13 Summary of this function goes here
-%   Detailed explanation goes here
+function [imOut, cost] = intelligentResize(im, v, h, w, mask, maskWeight)
+%intelligentResize Remove or add low energy seams to intelligently resize
+%images.
 
+% check for parameters that need default
 narginchk(4, 6);
 if (nargin() < 5)
    mask = uint8(zeros(size(im, 1), size(im, 2)));
@@ -15,7 +16,8 @@ osize = size(im) + abs([v h 0]);
 out = im;
 cost = 0;
 
-vid = VideoWriter('fuck.avi');
+% initialize video feed
+vid = VideoWriter('imgTransform.avi');
 open(vid);
 
 while (v ~= 0 && h ~= 0)

@@ -1,6 +1,5 @@
 function eng = computeEngColor(im, w)
-%UNTITLED7 Summary of this function goes here
-%   Detailed explanation goes here
+%computeEngColor compute a weighted colour gradient.
 
 t = ones(size(im));
 

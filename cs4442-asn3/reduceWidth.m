@@ -1,6 +1,5 @@
 function [seam,im,c,mask] = reduceWidth(im,w,mask,maskWeight)
-%UNTITLED8 Summary of this function goes here
-%   Detailed explanation goes here
+%reduceWidth Remove a low energy vertical seam
 
 EC = computeEngColor(im, w);
 EG = computeEngGradH(im);

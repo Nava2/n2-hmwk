@@ -1,6 +1,5 @@
 function eng = computeEngGradH(im)
-%UNTITLED4 Summary of this function goes here
-%   Detailed explanation goes here
+%computeEngGradH Compute a greyscale gradient 
 
 M = [ -1 0 1 ];
 
