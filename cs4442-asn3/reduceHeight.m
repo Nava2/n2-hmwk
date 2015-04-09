@@ -1,6 +1,5 @@
 function [seam,im,c,mask] = reduceHeight(im,w,mask,maskWeight)
-%UNTITLED10 Summary of this function goes here
-%   Detailed explanation goes here
+%reduceHeight remove a low energy horizontal seam
 
 im_t = permute(im, [2 1 3]);
 mask_t = permute(mask, [2 1 3]);
