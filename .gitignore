@@ -16,4 +16,4 @@
 *.autosave
 .DS_Store
 
-**build/
+**build**/

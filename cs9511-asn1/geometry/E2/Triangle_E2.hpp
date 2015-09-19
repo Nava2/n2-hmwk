@@ -14,14 +14,14 @@ public:
     Triangle_E2(const Point_E2<number_type>& q0,
                 const Point_E2<number_type>& q1,
                 const Point_E2<number_type>& q2)
+        : p0(q0), p1(q1), p2(q2)
     {
-        p0 = q0; p1 = q1; p2 = q2;
+
     }
 
     Point_E2<number_type> P0() const { return p0; }
     Point_E2<number_type> P1() const { return p1; }
     Point_E2<number_type> P2() const { return p2; }
-
 
     Point_E2<number_type> vertex(int i) const
     {
@@ -41,6 +41,9 @@ public:
                                               p2.x(), p2.y(), unity);
         return area;
     }
+
+private:
+
 };
 
 #endif // TRIANGLE_E2_H
