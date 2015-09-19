@@ -1,0 +1,41 @@
+
+The start-up code provides a class GameWindow that draws three
+triangular tiles.
+
+Your objective is to modify the code to enable the user to move a 2D
+tile with the cursor keys, given the following constraint: Whenever an
+object has an edge that is "sufficiently close" to another edge, the
+object being moved will snap to the existing object. The existing
+object will remain static. No two tiles may overlap other than at the
+edges.
+
+Each step from 1 to 5 is worth 20%.
+
+1- Highlight one of the three triangles as the selected tile.
+
+2- Override
+    virtual void QWidget::keyPressEvent(QKeyEvent * event)
+to handle the user pressing the space bar. Each event changes
+the selected tile in sequence.
+
+3a- Handle cursor-key events. Each cursor-key event translates the
+selected tile.
+3b- Handle the 'z' and 'x' key events, rotating the selected tile by a
+suitable increment.
+
+4- Simulate magnets along the edges. Assume that all magnets attract
+without regards to polarity. Whenever a moving tile is sufficiently
+near another already positioned tile, it should snap to the existing
+tile. Once a tile has snapped once, the selected tile returns to the
+list of available tiles. Make the tiles finite or infinite, at your
+option.
+
+5- Add quadrangles, pentagons, and hexagons to the list of available
+objects. At your option, all tiles may or may not be regular polygons.
+The objective is to let the user tile the plane.
+
+For 10% of extra credit, also implement #6:
+
+6- Provide a rectangular area that you expect the user to completely
+fill. Display a running percentage of the subset of the rectangle that
+has so far been filled.
