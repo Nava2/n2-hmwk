@@ -2,22 +2,29 @@
 #define GAMEWINDOW_HPP
 
 #include "RefinedQWidget.hpp"
-#include "Tile.hpp"
-#include "geometry/E2/Geometry_E2.hpp"
-#include "geometry/E2/Triangle_E2.hpp"
+
+#include <QList>
+
+#include <Composite.hpp>
+#include <Tile.hpp>
 
 class QPaintDevice;
 class QKeyEvent;
 class QMouseEvent;
+class QPointF;
+class QPolygonF;
+
+class Tile;
+class Composite;
 
 class GameWindow : public RefinedQWidget
 {
+    Q_OBJECT
 public:
-    typedef Geometry_E2<double> Geometry_E2d;
-    typedef Geometry_E2d::Point Point;
-    typedef Geometry_E2d::Triangle Triangle;
 
-    GameWindow(QWidget * parent = 0);
+    GameWindow(QWidget * parent = NULL);
+
+    virtual ~GameWindow() { }
 
 protected:
     virtual QRectF getUserRectF() const;
@@ -30,9 +37,24 @@ protected:
 
     virtual void mouseReleaseEvent(QMouseEvent * event);
 
+signals:
+    void sceneChanged();
+
+
 private:
 
-    QList<Tile> m_tiles;
+    void handleSpaceKey();
+    void handleCursorKey(const Qt::Key key);
+    void handleRotateKey(const bool clockwise);
+
+    void handleMagnets();
+    void magnetize(Tile* const currTile, Tile* const newTile,
+                   const QPointF& s, const QPointF* t,
+                   const QPointF& u, const QPointF* v);
+
+    QList<Composite>    d_composites;
+    QList<Tile>         d_tiles;
+    Tile*               d_currTile;
 };
 
 #endif // GAMEWINDOW_HPP
