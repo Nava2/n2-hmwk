@@ -18,7 +18,9 @@ HEADERS += GameWindow.hpp \
            geometry/E2/Geometry_E2.hpp \
            geometry/E2/Point_E2.hpp \
            geometry/E2/Triangle_E2.hpp \
-           misc/determinant.hpp
+           misc/determinant.hpp \
+    Composite.hpp
 SOURCES += main.cpp \
     GameWindow.cpp \
-    Tile.cpp
+    Tile.cpp \
+    Composite.cpp

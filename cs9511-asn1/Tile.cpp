@@ -1,37 +1,19 @@
 
 #include <Tile.hpp>
 
-Tile::Tile(const Triangle &T, const QColor &color)
-    : _T(T), _color(color), _selected(false)
-{
-    _polygon << QPointF(T.P0().x(), T.P0().y())
-             << QPointF(T.P1().x(), T.P1().y())
-             << QPointF(T.P2().x(), T.P2().y());
-}
+#include <cmath>
 
-QColor Tile::color() const
+Tile::Tile(const uint       sides,
+           const QPoint     center,
+           const uint       length,
+           const QColor&    color)
+    : d_color(color), d_selected(false)
 {
-    return _color;
-}
+    const double theta = (2. * M_PI) / sides;
+    const double radius = (1.0 * length) / sqrt(2. * (1. - cos(theta)));
 
-QPolygonF Tile::polygon() const
-{
-    return _polygon;
-}
-
-bool Tile::selected() const
-{
-    return _selected;
-}
-
-bool& Tile::selected()
-{
-    return _selected;
-}
-
-QDebug operator<<(QDebug debug, const Tile& t)
-{
-    debug << "Tile{" << "selected=" << t._selected << "colour=" << t._color << "polygon=" << t._polygon << "}";
-
-    return debug;
+    for (uint i = 0; i < sides; ++i) {
+        d_polygon << QPointF(center.x() + radius * cos(theta * i),
+                             center.y() + radius * sin(theta * i));
+    }
 }
