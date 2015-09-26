@@ -7,7 +7,6 @@ QT += core gui svg printsupport
 CONFIG += c++11
 
 QMAKE_CXXFLAGS += -std=c++11
-QMAKE_CXXFLAGS += -stdlib=libc++
 
 mac:CONFIG  -= app_bundle
 
@@ -15,12 +14,13 @@ mac:CONFIG  -= app_bundle
 HEADERS += GameWindow.hpp \
            RefinedQWidget.hpp \
            Tile.hpp \
-           geometry/E2/Geometry_E2.hpp \
-           geometry/E2/Point_E2.hpp \
-           geometry/E2/Triangle_E2.hpp \
-           misc/determinant.hpp \
-    Composite.hpp
+           Composite.hpp \
+           GeometryUtils.hpp \
+           mainwindow.h
 SOURCES += main.cpp \
-    GameWindow.cpp \
-    Tile.cpp \
-    Composite.cpp
+           GameWindow.cpp \
+           Tile.cpp \
+           Composite.cpp \
+           mainwindow.cpp
+
+FORMS +=   mainwindow.ui

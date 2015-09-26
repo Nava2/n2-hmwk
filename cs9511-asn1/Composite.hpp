@@ -7,37 +7,39 @@
 
 class QPolygonF;
 
-class Composite final
+class Composite final : public Tile
 {
 public:
-    Composite(const QList<Tile>& tiles = QList<Tile>());
+    Composite(const QList<QSharedPointer<Tile> >& tiles = QList<QSharedPointer<Tile>>());
 
     virtual ~Composite() { }
 
-    const QList<Tile> tiles() const;
+    const QList<QSharedPointer<Tile> > tiles() const;
 
-    QList<Tile>& tiles();
+    QList<QSharedPointer<Tile> >& tiles();
 
-    bool selected() const;
-    void selected(const bool selected);
+    virtual bool selected() const override;
+    void selected(const bool selected) override;
 
-    const QPolygonF polygon() const;
+    const QPolygonF polygon() const override;
 
-    bool containsTile(const Tile &tile) const;
+    void rotate(const double deg) override;
+    void translate(const qreal tx, const qreal ty) override;
+
+    bool containsTile(const QSharedPointer<Tile> &tile) const;
 
 private:
-    QList<Tile> d_tiles;
-    bool        d_selected;
+    QList<QSharedPointer<Tile>> d_tiles;
 };
 
 inline
-QList<Tile>& Composite::tiles()
+QList<QSharedPointer<Tile> > &Composite::tiles()
 {
     return d_tiles;
 }
 
 inline
-const QList<Tile> Composite::tiles() const
+const QList<QSharedPointer<Tile> > Composite::tiles() const
 {
     return d_tiles;
 }
@@ -49,7 +51,7 @@ bool Composite::selected() const
 }
 
 inline
-bool Composite::containsTile(const Tile& tile) const
+bool Composite::containsTile(const QSharedPointer<Tile>& tile) const
 {
     return d_tiles.contains(tile);
 }

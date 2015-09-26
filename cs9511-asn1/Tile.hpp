@@ -5,12 +5,21 @@
 #include <QDebug>
 #include <QPointF>
 #include <QPolygonF>
+#include <QSharedPointer>
+
+#include <GeometryUtils.hpp>
+
+// Forward
+class Composite;
 
 class Tile
 {
 public:
 
-    static const uint DEFAULT_LENGTH = 25;
+    static const uint   DEFAULT_LENGTH  = 25;
+
+    static constexpr
+    const double OFFSET_ANGLE    = 30.0;
 
     Tile(const uint     sides,
          const QPoint  center,
@@ -18,41 +27,55 @@ public:
          const QColor&  color = Qt::black);
 
     static
-    Tile triangle(const QPoint   center,
-                  const QColor&  color = Qt::black,
-                  const uint     length = DEFAULT_LENGTH);
+    QSharedPointer<Tile> shape(const QPoint center,
+                               const uint sides,
+                               const QColor& color  = Qt::black,
+                               const uint length    = DEFAULT_LENGTH);
 
     static
-    Tile square(const QPoint     center,
-                const QColor&    color = Qt::black,
-                const uint       length = DEFAULT_LENGTH);
+    QSharedPointer<Tile> triangle(const QPoint   center,
+                                  const QColor&  color = Qt::black,
+                                  const uint     length = DEFAULT_LENGTH);
 
     static
-    Tile pentagon(const QPoint   center,
-                  const QColor&  color = Qt::black,
-                  const uint     length = DEFAULT_LENGTH);
+     QSharedPointer<Tile> square(const QPoint     center,
+                                 const QColor&    color = Qt::black,
+                                 const uint       length = DEFAULT_LENGTH);
 
     static
-    Tile hexagon(const QPoint    center,
-                 const QColor&   color = Qt::black,
-                 const uint      length = DEFAULT_LENGTH);
+     QSharedPointer<Tile> pentagon(const QPoint   center,
+                                   const QColor&  color = Qt::black,
+                                   const uint     length = DEFAULT_LENGTH);
 
-    QColor color() const;
+    static
+     QSharedPointer<Tile> hexagon(const QPoint    center,
+                                  const QColor&   color = Qt::black,
+                                  const uint      length = DEFAULT_LENGTH);
 
-    QPolygonF polygon() const;
+    virtual ~Tile() { }
 
-    QPolygonF& polygon();
+    virtual QColor color() const;
 
-    bool selected() const;
+    virtual const QPolygonF polygon() const;
 
-    bool& selected();
+    const QPointF center() const;
+    double area() const;
+
+    virtual bool selected() const;
+
+    virtual void selected(const bool selected);
+
+    virtual void rotate(const double deg);
+    virtual void translate(const qreal tx, const qreal ty);
 
     bool operator==(const Tile& other) const;
 
     friend
     QDebug operator<<(QDebug debug, const Tile &t);
 
-private:
+protected:
+    Tile();
+
     /// Color of the tile
     QColor      d_color;
 
@@ -61,38 +84,50 @@ private:
 
     bool        d_selected;
 
+    // It's 8:02 PM, this is bad, I know it's bad, I'm sorry.
+    friend class Composite;
+
 };
 
 inline
-Tile Tile::triangle(const QPoint    center,
-                    const QColor&   color,
-                    const uint      length)
+QSharedPointer<Tile> Tile::shape(const QPoint    center,
+                                 const uint      sides,
+                                 const QColor&   color,
+                                 const uint      length)
 {
-    return Tile(3, center, length, color);
+    return QSharedPointer<Tile>(new Tile(sides, center, length, color));
 }
 
 inline
-Tile Tile::square(const QPoint  center,
-                  const QColor& color,
-                  const uint    length)
+QSharedPointer<Tile> Tile::triangle(const QPoint    center,
+                                    const QColor&   color,
+                                    const uint      length)
 {
-    return Tile(4, center, length, color);
+    return Tile::shape(center, 3, color, length);
 }
 
 inline
-Tile Tile::pentagon(const QPoint    center,
-                    const QColor&   color,
-                    const uint      length)
+QSharedPointer<Tile> Tile::square(const QPoint  center,
+                                  const QColor& color,
+                                  const uint    length)
 {
-    return Tile(5, center, length, color);
+    return Tile::shape(center, 4, color, length);
 }
 
 inline
-Tile Tile::hexagon(const QPoint     center,
-                   const QColor&    color,
-                   const uint       length)
+QSharedPointer<Tile> Tile::pentagon(const QPoint    center,
+                                    const QColor&   color,
+                                    const uint      length)
 {
-    return Tile(6, center, length, color);
+    return Tile::shape(center, 5, color, length);
+}
+
+inline
+QSharedPointer<Tile> Tile::hexagon(const QPoint     center,
+                                   const QColor&    color,
+                                   const uint       length)
+{
+    return Tile::shape(center, 6, color, length);
 }
 
 inline
@@ -102,13 +137,7 @@ QColor Tile::color() const
 }
 
 inline
-QPolygonF Tile::polygon() const
-{
-    return d_polygon;
-}
-
-inline
-QPolygonF& Tile::polygon()
+const QPolygonF Tile::polygon() const
 {
     return d_polygon;
 }
@@ -120,9 +149,9 @@ bool Tile::selected() const
 }
 
 inline
-bool& Tile::selected()
+void Tile::selected(const bool selected)
 {
-    return d_selected;
+    d_selected = selected;
 }
 
 inline
@@ -134,11 +163,44 @@ bool Tile::operator ==(const Tile& other) const
 }
 
 inline
+const QPointF Tile::center() const
+{
+    const auto poly = this->polygon();
+    QPointF center;
+
+    GeometryUtils::polygonCentroid(poly, &center, NULL);
+
+    return center;
+}
+
+inline
+double Tile::area() const
+{
+    const auto poly = this->polygon();
+    double area;
+
+    GeometryUtils::polygonCentroid(poly, NULL, &area);
+
+    return area;
+}
+
+inline
 QDebug operator<<(QDebug debug, const Tile& t)
 {
     debug.nospace() << "Tile[0x" << hex << (size_t) &t << "]{" << "selected=" << t.d_selected << ", colour=" << t.d_color << ", polygon=" << t.d_polygon << "}";
 
     return debug;
+}
+
+inline uint qHash(const Tile &key)
+{
+    uint hash = qHash(key.color().name()) ^ (key.selected() ? 1 : 0 );
+    for (const auto& pt: key.polygon())
+    {
+        hash += 31 * (qHash(pt.x()) ^ qHash(pt.y()));
+    }
+
+    return hash;
 }
 
 #endif // TILE_HPP
