@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2015.4 (64-bit)
+# SW Build 1412921 on Wed Nov 18 09:44:32 MST 2015
+# IP Build 1412160 on Tue Nov 17 13:47:24 MST 2015
+# Start of session at: Thu Jan 21 11:56:31 2016
+# Process ID: 11023
+# Current directory: /home/kevin/hmwk/ece3390_asn1/ece3390_asn1.runs/impl_1
+# Command line: vivado -log prob1.vdi -applog -messageDb vivado.pb -mode batch -source prob1.tcl -notrace
+# Log file: /home/kevin/hmwk/ece3390_asn1/ece3390_asn1.runs/impl_1/prob1.vdi
+# Journal file: /home/kevin/hmwk/ece3390_asn1/ece3390_asn1.runs/impl_1/vivado.jou
+#-----------------------------------------------------------
+source prob1.tcl -notrace
